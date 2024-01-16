@@ -267,6 +267,10 @@ bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             skip(lexer);
         }
 
+        if (lexer->lookahead == '\n') {
+          return false;
+        }
+
         if (valid_symbols[SECTIONEND] && iswspace(lexer->lookahead) &&
             stars > 0 && stars <= VEC_BACK(scanner->section_stack)) {
             VEC_POP(scanner->section_stack);
