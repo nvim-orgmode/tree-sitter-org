@@ -348,7 +348,7 @@
       "type": "REPEAT1",
       "content": {
         "type": "SYMBOL",
-        "name": "expr"
+        "name": "_expr_or_timestamp"
       }
     },
     "tag_list": {
@@ -2021,7 +2021,7 @@
       "type": "REPEAT1",
       "content": {
         "type": "SYMBOL",
-        "name": "expr"
+        "name": "_expr_or_timestamp"
       }
     },
     "_multiline_text": {
@@ -2033,7 +2033,7 @@
             "type": "REPEAT1",
             "content": {
               "type": "SYMBOL",
-              "name": "expr"
+              "name": "_expr_or_timestamp"
             }
           },
           {
@@ -4833,6 +4833,19 @@
           }
         }
       ]
+    },
+    "_expr_or_timestamp": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "expr"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "timestamp"
+        }
+      ]
     }
   },
   "extras": [
@@ -4862,6 +4875,10 @@
     [
       "entry",
       "expr"
+    ],
+    [
+      "entry",
+      "_expr_or_timestamp"
     ]
   ],
   "precedences": [

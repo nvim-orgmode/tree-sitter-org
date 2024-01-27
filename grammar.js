@@ -49,6 +49,7 @@ org_grammar = {
     // headline  'entry_token1'  ':'  •  '<'  …
     [$.entry, $.expr],
 
+    [$.entry, $._expr_or_timestamp]
   ],
 
   rules: {
@@ -114,7 +115,7 @@ org_grammar = {
       $._eol,
     ),
 
-    item: $ => repeat1($.expr),
+    item: $ => repeat1($._expr_or_timestamp),
 
     tag_list: $ => prec.dynamic(1, seq(
       $._tag_expr_start,
@@ -327,8 +328,8 @@ org_grammar = {
     _nl: _ => choice('\n', '\r'),
     _eol: $ => choice('\n', '\r', $._eof),
 
-    _expr_line: $ => repeat1($.expr),
-    _multiline_text: $ => repeat1(seq(repeat1($.expr), $._eol)),
+    _expr_line: $ => repeat1($._expr_or_timestamp),
+    _multiline_text: $ => repeat1(seq(repeat1($._expr_or_timestamp), $._eol)),
 
     _immediate_expr: $ => repeat1(expr('immediate', token.immediate)),
     _noc_expr: $ => repeat1(expr('immediate', token.immediate, ':')),
@@ -345,6 +346,7 @@ org_grammar = {
       repeat(expr('immediate', token.immediate))
     ),
 
+    _expr_or_timestamp: $ => choice($.expr, $.timestamp),
   }
 };
 
