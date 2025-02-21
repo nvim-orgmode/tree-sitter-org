@@ -1008,20 +1008,6 @@ List.11e  - No Checkbox [x
           (expr))))))
 
 ================================================================================
-List.11f  - No Checkbox [x1]
-================================================================================
-- [x1]
---------------------------------------------------------------------------------
-
-(document
-  body: (body
-    (list
-      (listitem
-        bullet: (bullet)
-        contents: (paragraph
-          (expr))))))
-
-================================================================================
 Directive.1  - Document
 ================================================================================
 #+a: b
@@ -2396,7 +2382,9 @@ Plan.14  - paragraph conflict
     body: (body
       (paragraph
         (expr)
-        (expr)))))
+        (link_desc
+          url: (expr)
+          desc: (expr))))))
 
 ================================================================================
 Plan.14a - Successful
@@ -2452,7 +2440,9 @@ Plan.16  - Link
         (expr)))
     body: (body
       (paragraph
-        (expr)))))
+        (link
+          url: (expr)
+        )))))
 
 ================================================================================
 Plan.17  - Tab
@@ -2472,3 +2462,372 @@ Plan.17  - Tab
         name: (entry_name)
         timestamp: (timestamp
           date: (date))))))
+
+================================================================================
+Dates.1  - In paragraph
+================================================================================
+* a
+  Some text
+  Active date <2025-22-02 Sat>
+  Inactive date [2025-22-02 Sat 11:00]
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (paragraph
+        (expr)
+        (expr)
+        (expr)
+        (expr)
+        (timestamp
+          date: (date)
+          day: (day))
+        (expr)
+        (expr)
+        (timestamp
+          date: (date)
+          day: (day)
+          time: (time))))))
+
+
+================================================================================
+Dates.2  - In headline
+================================================================================
+* Headline with date <2025-22-02 Sat> text
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (expr)
+        (timestamp
+         date: (date)
+         day: (day))
+        (expr)))))
+
+================================================================================
+Dates.3  - In list item
+================================================================================
+* Headline text
+  - List item date <2025-22-02 Sat> text
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)))
+    body: (body
+      (list
+        (listitem
+          bullet: (bullet)
+          contents: (paragraph
+            (expr)
+            (expr)
+            (expr)
+            (timestamp
+              date: (date)
+              day: (day))
+            (expr)))))))
+
+================================================================================
+Dates.4  - In Table
+================================================================================
+* Headline text
+  | foo | bar |
+  | test <2025-22-02 Sat> | <2025-22-02 Sat> |
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)))
+    body: (body
+      (table
+        (row
+          (cell
+            contents: (contents
+              (expr)))
+          (cell
+            contents: (contents
+              (expr))))
+        (row
+          (cell
+            contents: (contents
+              (expr)
+              (timestamp
+                date: (date)
+                day: (day))))
+          (cell
+            contents: (contents
+              (timestamp
+                date: (date)
+                day: (day)))))))))
+
+================================================================================
+Dates.5  - In fndef
+================================================================================
+* Footnotes
+[fn:1] test <2025-22-02 Sat 12:30> text
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (fndef
+        label: (expr)
+        description: (description
+          (expr)
+          (timestamp
+            date: (date)
+            day: (day)
+            time: (time))
+          (expr))))))
+
+================================================================================
+Dates.6  - In property value
+================================================================================
+* Headline
+  :PROPERTIES:
+  :MY_DATE: This is a date <2025-22-02 Sat 12:00> test
+  :END:
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    property_drawer: (property_drawer
+      (property
+        name: (expr)
+        value: (value
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (timestamp
+            date: (date)
+            day: (day)
+            time: (time))
+          (expr))))))
+
+
+================================================================================
+Link.1  - In paragraph
+================================================================================
+* a
+  Some text
+  Only link [[https://neovim.io]]
+  Link with description [[https://neovim.io][neovim]]
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (paragraph
+        (expr)
+        (expr)
+        (expr)
+        (expr)
+        (link
+          url: (expr))
+        (expr)
+        (expr)
+        (expr)
+        (link_desc
+          url: (expr)
+          desc: (expr))))))
+
+
+================================================================================
+Link.2  - In headline
+================================================================================
+* Headline with link [[https://neovim.io]] and [[https://neovim.io][neovim]] desc
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (expr)
+        (link
+         url: (expr))
+        (expr)
+        (link_desc
+         url: (expr)
+         desc: (expr))
+        (expr)))))
+
+================================================================================
+Link.3  - In list item
+================================================================================
+* Headline text
+  - List item link [[https://neovim.io]] and [[https://neovim.io][neovim]] desc
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)))
+    body: (body
+      (list
+        (listitem
+          bullet: (bullet)
+          contents: (paragraph
+            (expr)
+            (expr)
+            (expr)
+            (link
+              url: (expr))
+            (expr)
+            (link_desc
+              url: (expr)
+              desc: (expr))
+            (expr)))))))
+
+================================================================================
+Link.4  - In Table
+================================================================================
+* Headline text
+  | foo | bar |
+  | test [[https://neovim.io]] | [[https://neovim.io][neovim]] |
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)))
+    body: (body
+      (table
+        (row
+          (cell
+            contents: (contents
+              (expr)))
+          (cell
+            contents: (contents
+              (expr))))
+        (row
+          (cell
+            contents: (contents
+              (expr)
+              (link
+                url: (expr))))
+          (cell
+            contents: (contents
+              (link_desc
+                url: (expr)
+                desc: (expr)))))))))
+
+================================================================================
+Link.5  - In fndef
+================================================================================
+* Footnotes
+[fn:1] test [[https://neovim.io][Neovim]] text
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (fndef
+        label: (expr)
+        description: (description
+          (expr)
+          (link_desc
+            url: (expr)
+            desc: (expr))
+          (expr))))))
+
+================================================================================
+Link.6  - In property value
+================================================================================
+* Headline
+  :PROPERTIES:
+  :MY_DATE: This is a link [[https://neovim.io]] test
+  :END:
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    property_drawer: (property_drawer
+      (property
+        name: (expr)
+        value: (value
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (link
+            url: (expr))
+          (expr))))))
+
+================================================================================
+Link.7  - Allow space in link
+================================================================================
+[[file:/path/to/my/file with space.txt]]
+[[file:/path/to/my/file with space.txt][file with space]]
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (link
+        url: (expr))
+      (link_desc
+        url: (expr)
+        desc: (expr)))))
+
+================================================================================
+Link.8  - Link and timestamp alongside
+================================================================================
+[[https://neovim.io]] [2025-22-02 Sat]
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (link
+        url: (expr))
+      (timestamp
+        date: (date)
+        day: (day)))))

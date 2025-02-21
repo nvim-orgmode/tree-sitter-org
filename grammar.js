@@ -48,7 +48,7 @@ org_grammar = {
 
     // headline  'entry_token1'  ':'  •  '<'  …
     [$.entry, $.expr],
-
+    [$.entry, $._markup],
   ],
 
   rules: {
@@ -75,6 +75,20 @@ org_grammar = {
         )),
         optional($._multis)
       ),
+    ),
+
+    link: $ => seq(
+      token('[['),
+      field('url', repeat(alias($._expr_with_space, $.expr))),
+      token(']]')
+    ),
+
+    link_desc: $ => seq(
+      token('[['),
+      field('url', repeat(alias($._expr_with_space, $.expr))),
+      token(']['),
+      field('desc', repeat(alias($._expr_with_space, $.expr))),
+      token(']]')
     ),
 
     // Can't have multiple in a row
@@ -114,7 +128,7 @@ org_grammar = {
       $._eol,
     ),
 
-    item: $ => repeat1($.expr),
+    item: $ => repeat1($._markup),
 
     tag_list: $ => prec.dynamic(1, seq(
       $._tag_expr_start,
@@ -327,8 +341,18 @@ org_grammar = {
     _nl: _ => choice('\n', '\r'),
     _eol: $ => choice('\n', '\r', $._eof),
 
-    _expr_line: $ => repeat1($.expr),
-    _multiline_text: $ => repeat1(seq(repeat1($.expr), $._eol)),
+    _expr_line: $ => repeat1($._markup),
+    _multiline_text: $ => repeat1(seq(
+      repeat1($._markup),
+      $._eol
+    )),
+
+    _markup: $ => choice(
+      $.expr,
+      $.link,
+      $.link_desc,
+      $.timestamp,
+    ),
 
     _immediate_expr: $ => repeat1(expr('immediate', token.immediate)),
     _noc_expr: $ => repeat1(expr('immediate', token.immediate, ':')),
@@ -345,13 +369,20 @@ org_grammar = {
       repeat(expr('immediate', token.immediate))
     ),
 
+    _expr_with_space: $ => seq(
+      expr('non-immediate', token, '', ' '),
+      repeat(expr('immediate', token.immediate, '', ' '))
+    ),
+
   }
 };
 
-function expr(pr, tfunc, skip = '') {
+function expr(pr, tfunc, skip = '', extra = '') {
   skip = skip.split("")
+  extra = extra.split("")
   return choice(
     ...asciiSymbols.filter(c => !skip.includes(c)).map(c => tfunc(prec(pr, c))),
+    ...extra.map(c => tfunc(prec(pr, c))),
     alias(tfunc(prec(pr, /\p{L}+/)), 'str'),
     alias(tfunc(prec(pr, /\p{N}+/)), 'num'),
     alias(tfunc(prec(pr, /[^\p{Z}\p{L}\p{N}\t\n\r]/)), 'sym'),

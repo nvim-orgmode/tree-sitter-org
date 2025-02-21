@@ -39,6 +39,8 @@
     "install": "node-gyp-build",
     "pre-build": "prebuild --all --strip --verbose",
     "pre-build:upload": "prebuild --upload-all",
+    "generate": "tree-sitter generate",
+    "parse": "tree-sitter parse",
     "test": "tree-sitter test",
     "test-windows": "tree-sitter test",
     "prebuildify": "prebuildify --napi --strip"
