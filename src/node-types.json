@@ -497,10 +497,21 @@
   {
     "type": "item",
     "named": true,
-    "fields": {},
+    "fields": {
+      "priority": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "priority",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "expr",
@@ -776,6 +787,22 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "priority",
+    "named": true,
+    "fields": {
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expr",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1218,6 +1245,10 @@
   },
   {
     "type": "[ ]",
+    "named": false
+  },
+  {
+    "type": "[#",
     "named": false
   },
   {

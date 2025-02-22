@@ -1992,6 +1992,115 @@ Headlines.8e - Junk
         (expr)))))
 
 ================================================================================
+Headlines.9a - Keyword and Priority
+================================================================================
+* TODO [#A] test
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        priority: (priority
+         value: (expr))
+        (expr)))))
+
+================================================================================
+Headlines.9b - Priority and rest
+================================================================================
+* [#A] test other content
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        priority: (priority
+         value: (expr))
+        (expr)
+        (expr)
+        (expr)))))
+
+================================================================================
+Headlines.9c - Priority ignored if bad position
+================================================================================
+* TODO something [#A] test other content
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (expr)
+        (expr)
+        (expr)
+        (expr)))))
+
+================================================================================
+Headlines.9d - Corectly parse with todo keyword, priority with inactive date
+================================================================================
+* TODO [#A] [2025-02-22 Sat 11:00]
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        priority: (priority
+          value: (expr))
+        (timestamp
+          date: (date)
+          day: (day)
+          time: (time))))))
+
+================================================================================
+Headlines.9e - Corectly parse with priority and inactive date
+================================================================================
+* [#A] [2025-02-22 Sat 11:00] test
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        priority: (priority
+          value: (expr))
+        (timestamp
+          date: (date)
+          day: (day)
+          time: (time))
+        (expr)))))
+
+================================================================================
+Headlines.9f - Ignore bad positioned priority alongside inactive date
+================================================================================
+* TODO foo [2025-02-22 Sat 11:00] [#A] bar
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (timestamp
+          date: (date)
+          day: (day)
+          time: (time))
+        (expr)
+        (expr)))))
+
+================================================================================
 Section.1  - paragraph not a plan
 ================================================================================
 * a
@@ -2831,3 +2940,4 @@ Link.8  - Link and timestamp alongside
       (timestamp
         date: (date)
         day: (day)))))
+

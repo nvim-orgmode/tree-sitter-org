@@ -91,6 +91,12 @@ org_grammar = {
       token(']]')
     ),
 
+    priority: $ => seq(
+      token('[#'),
+      field('value', alias(/[A-Za-z0-9]+/, $.expr)),
+      token.immediate(']')
+    ),
+
     // Can't have multiple in a row
     _multis: $ => choice(
       $.paragraph,
@@ -128,7 +134,11 @@ org_grammar = {
       $._eol,
     ),
 
-    item: $ => repeat1($._markup),
+    item: $ => choice(
+      seq($.expr, field('priority', $.priority), repeat1($._markup)),
+      seq(field('priority', $.priority), repeat($._markup)),
+      repeat1($._markup)
+    ),
 
     tag_list: $ => prec.dynamic(1, seq(
       $._tag_expr_start,
@@ -178,7 +188,6 @@ org_grammar = {
     tsexp: $ => repeat1(alias($._ts_expr, $.expr)),
 
     _ts_contents: $ => seq(
-      repeat($._ts_element),
       field('date', $.date),
       repeat($._ts_element),
     ),
