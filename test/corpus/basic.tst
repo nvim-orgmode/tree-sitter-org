@@ -450,6 +450,96 @@ DynamicBlock.3  - End name
       end_name: (expr))))
 
 ================================================================================
+InlineBlock.1  - No parameters
+================================================================================
+This is src_lua{ print('foo') }
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (inline_code_block
+        (open)
+        (contents
+          (expr))
+        (close)))))
+
+================================================================================
+InlineBlock.2  - With parameters
+================================================================================
+This is src_lua[params]{ print('foo') }
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (inline_code_block
+        (open)
+        (contents
+          (expr))
+        (close)))))
+
+================================================================================
+InlineBlock.3  - Treated as expr without params and open/close brackets
+================================================================================
+This is src_lua
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+InlineBlock.4  - Ignored if missing opening bracket
+================================================================================
+This is src_lua[]
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+InlineBlock.5  - Valid with empty content
+================================================================================
+This is src_lua{}
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (inline_code_block
+        (open)
+        (close)))))
+
+================================================================================
+InlineBlock.6  - Valid with empty params and empty content
+================================================================================
+This is src_lua[]{}
+--------------------------------------------------------------------------------
+
+(document
+  (body
+    (paragraph
+      (expr)
+      (expr)
+      (inline_code_block
+        (open)
+        (close)))))
+
+================================================================================
 Comment.1 - Basic
 ================================================================================
 # a
@@ -2003,8 +2093,7 @@ Headlines.9a - Keyword and Priority
       stars: (stars)
       item: (item
         (expr)
-        priority: (priority
-         value: (expr))
+        priority: (priority)
         (expr)))))
 
 ================================================================================
@@ -2018,8 +2107,7 @@ Headlines.9b - Priority and rest
     headline: (headline
       stars: (stars)
       item: (item
-        priority: (priority
-         value: (expr))
+        priority: (priority)
         (expr)
         (expr)
         (expr)))))
@@ -2054,8 +2142,7 @@ Headlines.9d - Corectly parse with todo keyword, priority with inactive date
       stars: (stars)
       item: (item
         (expr)
-        priority: (priority
-          value: (expr))
+        priority: (priority)
         (timestamp
           date: (date)
           day: (day)
@@ -2072,8 +2159,7 @@ Headlines.9e - Corectly parse with priority and inactive date
     headline: (headline
       stars: (stars)
       item: (item
-        priority: (priority
-          value: (expr))
+        priority: (priority)
         (timestamp
           date: (date)
           day: (day)

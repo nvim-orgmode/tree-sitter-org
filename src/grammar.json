@@ -246,33 +246,89 @@
       ]
     },
     "priority": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PATTERN",
+        "value": "\\[#\\w+\\]"
+      }
+    },
+    "inline_code_block": {
       "type": "SEQ",
       "members": [
         {
-          "type": "TOKEN",
+          "type": "FIELD",
+          "name": "open",
           "content": {
-            "type": "STRING",
-            "value": "[#"
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_inline_code_open"
+            },
+            "named": true,
+            "value": "open"
           }
         },
         {
           "type": "FIELD",
-          "name": "value",
+          "name": "contents",
           "content": {
             "type": "ALIAS",
             "content": {
-              "type": "PATTERN",
-              "value": "[A-Za-z0-9]+"
+              "type": "REPEAT",
+              "content": {
+                "type": "SYMBOL",
+                "name": "expr"
+              }
             },
             "named": true,
-            "value": "expr"
+            "value": "contents"
           }
         },
         {
-          "type": "IMMEDIATE_TOKEN",
+          "type": "FIELD",
+          "name": "close",
           "content": {
-            "type": "STRING",
-            "value": "]"
+            "type": "ALIAS",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "TOKEN",
+                  "content": {
+                    "type": "STRING",
+                    "value": "}"
+                  }
+                },
+                {
+                  "type": "IMMEDIATE_TOKEN",
+                  "content": {
+                    "type": "STRING",
+                    "value": "}"
+                  }
+                }
+              ]
+            },
+            "named": true,
+            "value": "close"
+          }
+        }
+      ]
+    },
+    "_inline_code_open": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
+            "type": "PATTERN",
+            "value": "src_[^\\s\\[\\{]+\\{"
+          }
+        },
+        {
+          "type": "TOKEN",
+          "content": {
+            "type": "PATTERN",
+            "value": "src_[^\\s\\[\\{]+\\[[^\\r\\n\\[\\]]*\\]\\{"
           }
         }
       ]
@@ -2216,6 +2272,10 @@
         {
           "type": "SYMBOL",
           "name": "expr"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "inline_code_block"
         },
         {
           "type": "SYMBOL",

@@ -91,10 +91,17 @@ org_grammar = {
       token(']]')
     ),
 
-    priority: $ => seq(
-      token('[#'),
-      field('value', alias(/[A-Za-z0-9]+/, $.expr)),
-      token.immediate(']')
+    priority: _ => token(/\[#\w+\]/),
+
+    inline_code_block: $ => seq(
+      field('open', alias($._inline_code_open, $.open)),
+      field('contents', alias(repeat($.expr), $.contents)),
+      field('close', alias(choice(token('}'), token.immediate('}')), $.close))
+    ),
+
+    _inline_code_open: $ => choice(
+      token(/src_[^\s\[\{]+\{/),
+      token(/src_[^\s\[\{]+\[[^\r\n\[\]]*\]\{/)
     ),
 
     // Can't have multiple in a row
@@ -358,6 +365,7 @@ org_grammar = {
 
     _markup: $ => choice(
       $.expr,
+      $.inline_code_block,
       $.link,
       $.link_desc,
       $.timestamp,
