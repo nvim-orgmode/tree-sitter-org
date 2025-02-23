@@ -15,6 +15,8 @@ const org_grammar = {
     $._stars,
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
+    $._link_open,
+    $._inline_code,
   ],
 
   inline: $ => [
@@ -78,13 +80,13 @@ const org_grammar = {
     ),
 
     link: $ => seq(
-      token('[['),
+      alias($._link_open, '[['),
       field('url', repeat(alias($._expr_with_space, $.expr))),
       token(']]')
     ),
 
     link_desc: $ => seq(
-      token('[['),
+      alias($._link_open, '[['),
       field('url', repeat(alias($._expr_with_space, $.expr))),
       token(']['),
       field('desc', repeat(alias($._expr_with_space, $.expr))),
@@ -94,14 +96,23 @@ const org_grammar = {
     priority: _ => token(/\[#\w+\]/),
 
     inline_code_block: $ => seq(
-      field('open', alias($._inline_code_open, $.open)),
+      field('open', alias($._inline_block_open, $.open)),
       field('contents', alias(repeat($.expr), $.contents)),
       field('close', alias(choice(token('}'), token.immediate('}')), $.close))
     ),
 
-    _inline_code_open: $ => choice(
-      token(/src_[^\s\[\{]+\{/),
-      token(/src_[^\s\[\{]+\[[^\r\n\[\]]*\]\{/)
+    _inline_block_open: $ => seq(
+      $._inline_code,
+      token('src_'),
+      field('language', alias(token.immediate(/\w+/), $.language)),
+      optional(
+        seq(
+          token.immediate('['),
+          field('parameters', alias(repeat(alias(/[^\r\n\p{Z}\]]+/, $.expr)), $.parameters)),
+          ']',
+        ),
+      ),
+      token.immediate('{'),
     ),
 
     // Can't have multiple in a row

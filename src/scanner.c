@@ -41,6 +41,8 @@ enum TokenType {
     HLSTARS,
     SECTIONEND,
     ENDOFFILE,
+    LINKOPEN,
+    INLINECODE,
 };
 
 typedef enum {
@@ -72,7 +74,11 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
-unsigned serialize(Scanner *scanner, char *buffer) {
+static inline bool iseol(TSLexer *lexer) {
+    return lexer->lookahead == '\n' || lexer->lookahead == '\0';
+}
+
+static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
 
     size_t indent_count = scanner->indent_length_stack->len - 1;
@@ -104,7 +110,7 @@ unsigned serialize(Scanner *scanner, char *buffer) {
     return i;
 }
 
-void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
+static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     VEC_CLEAR(scanner->section_stack);
     VEC_PUSH(scanner->section_stack, 0);
     VEC_CLEAR(scanner->indent_length_stack);
@@ -138,10 +144,11 @@ static bool in_error_recovery(const bool *valid_symbols) {
     return (valid_symbols[LISTSTART] && valid_symbols[LISTEND] &&
             valid_symbols[LISTITEMEND] && valid_symbols[BULLET] &&
             valid_symbols[HLSTARS] && valid_symbols[SECTIONEND] &&
-            valid_symbols[ENDOFFILE]);
+            valid_symbols[ENDOFFILE] && valid_symbols[LINKOPEN] &&
+            valid_symbols[INLINECODE]);
 }
 
-Bullet getbullet(TSLexer *lexer) {
+static Bullet getbullet(TSLexer *lexer) {
     if (lexer->lookahead == '-') {
         advance(lexer);
         if (iswspace(lexer->lookahead))
@@ -193,7 +200,7 @@ Bullet getbullet(TSLexer *lexer) {
     return NOTABULLET;
 }
 
-bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
+static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (in_error_recovery(valid_symbols))
         return false;
 
@@ -284,6 +291,7 @@ bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return false;
     }
 
+
     // - Liststart and bullets
     if ((valid_symbols[LISTSTART] || valid_symbols[BULLET]) && newlines == 0) {
         Bullet bullet = getbullet(lexer);
@@ -301,6 +309,75 @@ bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             lexer->result_symbol = LISTSTART;
             return true;
         }
+    }
+
+    if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
+        advance(lexer);
+        if (lexer->lookahead == '[') {
+            advance(lexer);
+            lexer->mark_end(lexer);
+            bool has_content = false;
+            while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
+                int32_t prev_lookahead = lexer->lookahead;
+                advance(lexer);
+                if (prev_lookahead == ']' && lexer->lookahead == ']') {
+                    advance(lexer);
+                    if (!has_content) {
+                        return false;
+                    }
+                    lexer->result_symbol = LINKOPEN;
+                    return true;
+                }
+                has_content = true;
+            }
+        }
+    }
+
+    if (valid_symbols[INLINECODE] && lexer->lookahead == 's') {
+        const char *arr[] = {"r", "c", "_"};
+        for (int i = 0; i < 3; i++) {
+            if (iswspace(lexer->lookahead) || iseol(lexer)) {
+                return false;
+            }
+            skip(lexer);
+            if (lexer->lookahead != arr[i][0]) {
+                return false;
+            }
+        }
+        while (!iseol(lexer)) {
+            skip(lexer);
+            if (iswspace(lexer->lookahead)) {
+                return false;
+            }
+
+            // Parameter open
+            if (lexer->lookahead == '[') {
+                while (!iseol(lexer) && lexer->lookahead != ']') {
+                    skip(lexer);
+                }
+
+                if (lexer->lookahead != ']') {
+                    return false;
+                }
+                skip(lexer);
+            }
+
+            // Content open
+            if (lexer->lookahead == '{') {
+                while (!iseol(lexer) && lexer->lookahead != '}') {
+                    skip(lexer);
+                }
+                if (lexer->lookahead != '}') {
+                    return false;
+                }
+
+                skip(lexer);
+                lexer->result_symbol = INLINECODE;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     return false; // default

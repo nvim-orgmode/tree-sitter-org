@@ -40,8 +40,8 @@
     "pre-build": "prebuild --all --strip --verbose",
     "pre-build:upload": "prebuild --upload-all",
     "generate": "tree-sitter generate",
-    "parse": "tree-sitter parse",
-    "test": "tree-sitter test",
+    "parse": "npm run generate && tree-sitter parse",
+    "test": "npm run generate && tree-sitter test",
     "test-windows": "tree-sitter test",
     "prebuildify": "prebuildify --napi --strip"
   },

@@ -456,15 +456,16 @@ This is src_lua{ print('foo') }
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
       (inline_code_block
-        (open)
-        (contents
+        open: (open
+          language: (language))
+        contents: (contents
           (expr))
-        (close)))))
+        close: (close)))))
 
 ================================================================================
 InlineBlock.2  - With parameters
@@ -473,15 +474,18 @@ This is src_lua[params]{ print('foo') }
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
       (inline_code_block
-        (open)
-        (contents
+        open: (open
+          language: (language)
+          parameters: (parameters
+            (expr)))
+        contents: (contents
           (expr))
-        (close)))))
+        close: (close)))))
 
 ================================================================================
 InlineBlock.3  - Treated as expr without params and open/close brackets
@@ -490,7 +494,7 @@ This is src_lua
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
@@ -503,7 +507,7 @@ This is src_lua[]
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
@@ -516,13 +520,14 @@ This is src_lua{}
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
       (inline_code_block
-        (open)
-        (close)))))
+        open: (open
+          language: (language))
+        close: (close)))))
 
 ================================================================================
 InlineBlock.6  - Valid with empty params and empty content
@@ -531,13 +536,28 @@ This is src_lua[]{}
 --------------------------------------------------------------------------------
 
 (document
-  (body
+  body: (body
     (paragraph
       (expr)
       (expr)
       (inline_code_block
-        (open)
-        (close)))))
+        open: (open
+          language: (language))
+        close: (close)))))
+
+================================================================================
+InlineBlock.7  - Treated as expr without language
+================================================================================
+This is src_ test
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr))))
 
 ================================================================================
 Comment.1 - Basic
@@ -3026,4 +3046,75 @@ Link.8  - Link and timestamp alongside
       (timestamp
         date: (date)
         day: (day)))))
+
+================================================================================
+Link.9  - Ignore unclosed link
+================================================================================
+[[https://neovim.io
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr))))
+
+================================================================================
+Link.10 - Ignore unclosed empty link
+================================================================================
+[[
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr))))
+
+================================================================================
+Link.11 - Ignore empty link
+================================================================================
+foo bar [[]] text
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+Link.12 - Ignore unclosed empty link with word after
+================================================================================
+[[ http
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr))))
+
+================================================================================
+Link.13 - Ignore unclosed link with description
+================================================================================
+[[https://neovim.io][desc]
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr))))
+
+================================================================================
+Link.14 - Ignore unclosed link with spaces with description
+================================================================================
+[[https://neovim.io ][desc]
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr))))
 
