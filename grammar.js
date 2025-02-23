@@ -159,10 +159,10 @@ const org_grammar = {
     _tag_expr_start: _ => token(prec('non-immediate', ':')),
 
     property_drawer: $ => seq(
-      caseInsensitive(':properties:'),
+      alias(/:properties:/i, ':properties:'),
       repeat1($._nl),
       repeat(seq($.property, repeat1($._nl))),
-      prec.dynamic(1, caseInsensitive(':end:')),
+      prec.dynamic(1, alias(/:end:/i, ':end:')),
       $._eol,
     ),
 
@@ -215,7 +215,7 @@ const org_grammar = {
     fndef: $ => seq(
       optional($._directive_list),
       seq(
-        caseInsensitive('[fn:'),
+        alias(/\[fn:/i, '[fn:'),
         field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
         ']',
       ),
@@ -240,30 +240,30 @@ const org_grammar = {
       token.immediate(prec('special', ':')),
       $._nl,
       optional(field('contents', $.contents)),
-      prec.dynamic(1, caseInsensitive(':end:')),
+      prec.dynamic(1, alias(/:end:/i, ':end:')),
       $._eol,
     ),
 
     block: $ => seq(
       optional($._directive_list),
-      caseInsensitive('#+begin_'),
+      alias(/#\+begin_/i, '#+begin_'),
       field('name', $.expr),
       optional(repeat1(field('parameter', $.expr))),
       $._nl,
       optional(field('contents', $.contents)),
-      caseInsensitive('#+end_'),
+      alias(/#\+end_/i, '#+end_'),
       field('end_name',alias($._immediate_expr, $.expr)),
       $._eol,
     ),
 
     dynamic_block: $ => seq(
       optional($._directive_list),
-      caseInsensitive('#+begin:'),
+      alias(/#\+begin:/i, '#+begin:'),
       field('name', $.expr),
       repeat(field('parameter', $.expr)),
       $._nl,
       optional(field('contents', $.contents)),
-      caseInsensitive('#+end:'),
+      alias(/#\+end:/i, '#+end:'),
       optional(field('end_name', $.expr)),
       $._eol,
     ),
@@ -316,7 +316,7 @@ const org_grammar = {
     ),
 
     formula: $ => seq(
-      caseInsensitive('#+tblfm:'),
+      alias(/#\+tblfm:/i, '#+tblfm:'),
       field('formula', optional($._expr_line)),
       $._eol,
     ),
@@ -325,24 +325,24 @@ const org_grammar = {
       optional($._directive_list),
       choice(
         seq(
-          caseInsensitive('\\begin{'),
+          alias(/\\begin\{/i, '\\begin{'),
           field('name', alias(/[\p{L}\p{N}*]+/, $.name)),
           token.immediate('}'),
           $._nl,
           optional(field('contents', $.contents)),
-          caseInsensitive('\\end{'),
+          alias(/\\end\{/i, '\\end{'),
           alias(/[\p{L}\p{N}*]+/, $.name),
           token.immediate('}'),
         ),
         seq(
-          token(seq(caseInsensitive('\\['), choice('\n', '\r'))),
+          token(seq('\\[', choice('\n', '\r'))),
           optional(field('contents', $.contents)),
-          caseInsensitive('\\]'),
+          '\\]',
         ),
         seq(
-          token(seq(caseInsensitive('\\('), choice('\n', '\r'))),
+          token(seq('\\(', choice('\n', '\r'))),
           optional(field('contents', $.contents)),
-          caseInsensitive('\\)'),
+          '\\)',
         ),
       ),
       $._eol,
@@ -407,20 +407,6 @@ function expr(pr, tfunc, skip = '', extra = '') {
     // alias(tfunc(prec(pr, 'x')), 'str'),
     // alias(tfunc(prec(pr, 'X')), 'str'),
   )
-}
-
-function caseInsensitive(str) {
-  return alias(new RegExp(str
-    .split('')
-    .map(caseInsensitiveChar)
-    .join('')
-  ), str.toLowerCase())
-}
-
-function caseInsensitiveChar(char) {
-  if (/[a-zA-Z]/.test(char))
-    return `[${char.toUpperCase()}${char.toLowerCase()}]`;
-  return char.replace(/[\[\]^$.|?*+()\\\{\}]/, '\\$&');
 }
 
 module.exports = grammar(org_grammar);

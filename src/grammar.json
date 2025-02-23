@@ -644,7 +644,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": ":[Pp][Rr][Oo][Pp][Ee][Rr][Tt][Ii][Ee][Ss]:"
+            "value": ":properties:",
+            "flags": "i"
           },
           "named": false,
           "value": ":properties:"
@@ -682,7 +683,8 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": ":[Ee][Nn][Dd]:"
+              "value": ":end:",
+              "flags": "i"
             },
             "named": false,
             "value": ":end:"
@@ -1172,7 +1174,8 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "\\[[Ff][Nn]:"
+                "value": "\\[fn:",
+                "flags": "i"
               },
               "named": false,
               "value": "[fn:"
@@ -1380,7 +1383,8 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": ":[Ee][Nn][Dd]:"
+              "value": ":end:",
+              "flags": "i"
             },
             "named": false,
             "value": ":end:"
@@ -1411,7 +1415,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "#\\+[Bb][Ee][Gg][Ii][Nn]_"
+            "value": "#\\+begin_",
+            "flags": "i"
           },
           "named": false,
           "value": "#+begin_"
@@ -1467,7 +1472,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "#\\+[Ee][Nn][Dd]_"
+            "value": "#\\+end_",
+            "flags": "i"
           },
           "named": false,
           "value": "#+end_"
@@ -1510,7 +1516,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "#\\+[Bb][Ee][Gg][Ii][Nn]:"
+            "value": "#\\+begin:",
+            "flags": "i"
           },
           "named": false,
           "value": "#+begin:"
@@ -1558,7 +1565,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "#\\+[Ee][Nn][Dd]:"
+            "value": "#\\+end:",
+            "flags": "i"
           },
           "named": false,
           "value": "#+end:"
@@ -1915,7 +1923,8 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "#\\+[Tt][Bb][Ll][Ff][Mm]:"
+            "value": "#\\+tblfm:",
+            "flags": "i"
           },
           "named": false,
           "value": "#+tblfm:"
@@ -1967,7 +1976,8 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "\\\\[Bb][Ee][Gg][Ii][Nn]\\{"
+                    "value": "\\\\begin\\{",
+                    "flags": "i"
                   },
                   "named": false,
                   "value": "\\begin{"
@@ -2016,7 +2026,8 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "\\\\[Ee][Nn][Dd]\\{"
+                    "value": "\\\\end\\{",
+                    "flags": "i"
                   },
                   "named": false,
                   "value": "\\end{"
@@ -2048,12 +2059,7 @@
                     "type": "SEQ",
                     "members": [
                       {
-                        "type": "ALIAS",
-                        "content": {
-                          "type": "PATTERN",
-                          "value": "\\\\\\["
-                        },
-                        "named": false,
+                        "type": "STRING",
                         "value": "\\["
                       },
                       {
@@ -2089,12 +2095,7 @@
                   ]
                 },
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "PATTERN",
-                    "value": "\\\\\\]"
-                  },
-                  "named": false,
+                  "type": "STRING",
                   "value": "\\]"
                 }
               ]
@@ -2108,12 +2109,7 @@
                     "type": "SEQ",
                     "members": [
                       {
-                        "type": "ALIAS",
-                        "content": {
-                          "type": "PATTERN",
-                          "value": "\\\\\\("
-                        },
-                        "named": false,
+                        "type": "STRING",
                         "value": "\\("
                       },
                       {
@@ -2149,12 +2145,7 @@
                   ]
                 },
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "PATTERN",
-                    "value": "\\\\\\)"
-                  },
-                  "named": false,
+                  "type": "STRING",
                   "value": "\\)"
                 }
               ]
