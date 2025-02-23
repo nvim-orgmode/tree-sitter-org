@@ -1,8 +1,8 @@
-asciiSymbols = [ '!', '"', '#', '$', '%', '&', "'", '(', ')', '*',
+const asciiSymbols = [ '!', '"', '#', '$', '%', '&', "'", '(', ')', '*',
   '+', ',', '-', '.', '/',  ':', ';', '<', '=', '>', '?', '@', '[', ']',
   '\\', '^', '_', '`', '{', '|', '}', '~' ]
 
-org_grammar = {
+const org_grammar = {
   name: 'org',
   // Treat newlines explicitly, all other whitespace is extra
   extras: _ => [/[ \f\t\v\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]/],
