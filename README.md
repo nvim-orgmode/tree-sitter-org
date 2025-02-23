@@ -1,5 +1,10 @@
 # tree-sitter-org
 
+## NOTE: All PRs should be submitted to [next](https://github.com/nvim-orgmode/tree-sitter-org/tree/next) branch
+
+This is the fork of [https://github.com/milisims/tree-sitter-org](https://github.com/milisims/tree-sitter-org).
+Original maintainer stopped contribution so this is a continuation.
+
 Org grammar for tree-sitter. Here, the goal is to implement a grammar that can
 usefully parse org files to be used in any library that uses tree-sitter
 parsers. It is not meant to implement emacs' orgmode parser exactly, which is
