@@ -31,7 +31,9 @@
     }
 
 #define VEC_CLEAR(vec)                                                         \
-    { (vec)->len = 0; }
+    {                                                                          \
+        (vec)->len = 0;                                                        \
+    }
 
 enum TokenType {
     LISTSTART,
@@ -275,7 +277,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         }
 
         if (lexer->lookahead == '\n') {
-          return false;
+            return false;
         }
 
         if (valid_symbols[SECTIONEND] && iswspace(lexer->lookahead) &&
@@ -290,7 +292,6 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         }
         return false;
     }
-
 
     // - Liststart and bullets
     if ((valid_symbols[LISTSTART] || valid_symbols[BULLET]) && newlines == 0) {
