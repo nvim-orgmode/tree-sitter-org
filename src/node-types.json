@@ -791,28 +791,7 @@
   {
     "type": "open",
     "named": true,
-    "fields": {
-      "language": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "language",
-            "named": true
-          }
-        ]
-      },
-      "parameters": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "parameters",
-            "named": true
-          }
-        ]
-      }
-    }
+    "fields": {}
   },
   {
     "type": "paragraph",
@@ -851,21 +830,6 @@
         },
         {
           "type": "timestamp",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "parameters",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "expr",
           "named": true
         }
       ]
@@ -1421,10 +1385,6 @@
     "named": true
   },
   {
-    "type": "language",
-    "named": true
-  },
-  {
     "type": "name",
     "named": true
   },
@@ -1439,10 +1399,6 @@
   {
     "type": "repeat",
     "named": true
-  },
-  {
-    "type": "src_",
-    "named": false
   },
   {
     "type": "str",

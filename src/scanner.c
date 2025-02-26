@@ -44,7 +44,7 @@ enum TokenType {
     SECTIONEND,
     ENDOFFILE,
     LINKOPEN,
-    INLINECODE,
+    ERROR_SENTINEL
 };
 
 typedef enum {
@@ -75,10 +75,6 @@ typedef struct {
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
-
-static inline bool iseol(TSLexer *lexer) {
-    return lexer->lookahead == '\n' || lexer->lookahead == '\0';
-}
 
 static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
@@ -142,14 +138,6 @@ static bool dedent(Scanner *scanner, TSLexer *lexer) {
     return true;
 }
 
-static bool in_error_recovery(const bool *valid_symbols) {
-    return (valid_symbols[LISTSTART] && valid_symbols[LISTEND] &&
-            valid_symbols[LISTITEMEND] && valid_symbols[BULLET] &&
-            valid_symbols[HLSTARS] && valid_symbols[SECTIONEND] &&
-            valid_symbols[ENDOFFILE] && valid_symbols[LINKOPEN] &&
-            valid_symbols[INLINECODE]);
-}
-
 static Bullet getbullet(TSLexer *lexer) {
     if (lexer->lookahead == '-') {
         advance(lexer);
@@ -203,8 +191,10 @@ static Bullet getbullet(TSLexer *lexer) {
 }
 
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
-    if (in_error_recovery(valid_symbols))
+    // Error recovery
+    if (valid_symbols[ERROR_SENTINEL]) {
         return false;
+    }
 
     // - Section ends
     int16_t indent_length = 0;
@@ -332,53 +322,6 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
                 has_content = true;
             }
         }
-    }
-
-    if (valid_symbols[INLINECODE] && lexer->lookahead == 's') {
-        const char *arr[] = {"r", "c", "_"};
-        for (int i = 0; i < 3; i++) {
-            if (iswspace(lexer->lookahead) || iseol(lexer)) {
-                return false;
-            }
-            skip(lexer);
-            if (lexer->lookahead != arr[i][0]) {
-                return false;
-            }
-        }
-        while (!iseol(lexer)) {
-            skip(lexer);
-            if (iswspace(lexer->lookahead)) {
-                return false;
-            }
-
-            // Parameter open
-            if (lexer->lookahead == '[') {
-                while (!iseol(lexer) && lexer->lookahead != ']') {
-                    skip(lexer);
-                }
-
-                if (lexer->lookahead != ']') {
-                    return false;
-                }
-                skip(lexer);
-            }
-
-            // Content open
-            if (lexer->lookahead == '{') {
-                while (!iseol(lexer) && lexer->lookahead != '}') {
-                    skip(lexer);
-                }
-                if (lexer->lookahead != '}') {
-                    return false;
-                }
-
-                skip(lexer);
-                lexer->result_symbol = INLINECODE;
-                return true;
-            }
-        }
-
-        return false;
     }
 
     return false; // default

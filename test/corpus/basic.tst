@@ -461,8 +461,7 @@ This is src_lua{ print('foo') }
       (expr)
       (expr)
       (inline_code_block
-        open: (open
-          language: (language))
+        open: (open)
         contents: (contents
           (expr))
         close: (close)))))
@@ -479,10 +478,7 @@ This is src_lua[params]{ print('foo') }
       (expr)
       (expr)
       (inline_code_block
-        open: (open
-          language: (language)
-          parameters: (parameters
-            (expr)))
+        open: (open)
         contents: (contents
           (expr))
         close: (close)))))
@@ -525,8 +521,7 @@ This is src_lua{}
       (expr)
       (expr)
       (inline_code_block
-        open: (open
-          language: (language))
+        open: (open)
         close: (close)))))
 
 ================================================================================
@@ -541,8 +536,7 @@ This is src_lua[]{}
       (expr)
       (expr)
       (inline_code_block
-        open: (open
-          language: (language))
+        open: (open)
         close: (close)))))
 
 ================================================================================

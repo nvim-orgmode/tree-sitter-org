@@ -16,7 +16,7 @@ const org_grammar = {
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
     $._link_open,
-    $._inline_code,
+    $.error_sentinel
   ],
 
   inline: $ => [
@@ -96,23 +96,14 @@ const org_grammar = {
     priority: _ => token(/\[#\w+\]/),
 
     inline_code_block: $ => seq(
-      field('open', alias($._inline_block_open, $.open)),
+      field('open', alias($._inline_code_open, $.open)),
       field('contents', alias(repeat($.expr), $.contents)),
       field('close', alias(choice(token('}'), token.immediate('}')), $.close))
     ),
 
-    _inline_block_open: $ => seq(
-      $._inline_code,
-      token('src_'),
-      field('language', alias(token.immediate(/\w+/), $.language)),
-      optional(
-        seq(
-          token.immediate('['),
-          field('parameters', alias(repeat(alias(/[^\r\n\p{Z}\]]+/, $.expr)), $.parameters)),
-          ']',
-        ),
-      ),
-      token.immediate('{'),
+    _inline_code_open: $ => choice(
+      token(/src_([^\s\[\{]+)\{/),
+      token(/src_[^\s\[\{]+\[[^\r\n\[\]]*\]\{/)
     ),
 
     // Can't have multiple in a row

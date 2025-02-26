@@ -266,7 +266,7 @@
             "type": "ALIAS",
             "content": {
               "type": "SYMBOL",
-              "name": "_inline_block_open"
+              "name": "_inline_code_open"
             },
             "named": true,
             "value": "open"
@@ -318,86 +318,21 @@
         }
       ]
     },
-    "_inline_block_open": {
-      "type": "SEQ",
+    "_inline_code_open": {
+      "type": "CHOICE",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "_inline_code"
+          "type": "TOKEN",
+          "content": {
+            "type": "PATTERN",
+            "value": "src_([^\\s\\[\\{]+)\\{"
+          }
         },
         {
           "type": "TOKEN",
           "content": {
-            "type": "STRING",
-            "value": "src_"
-          }
-        },
-        {
-          "type": "FIELD",
-          "name": "language",
-          "content": {
-            "type": "ALIAS",
-            "content": {
-              "type": "IMMEDIATE_TOKEN",
-              "content": {
-                "type": "PATTERN",
-                "value": "\\w+"
-              }
-            },
-            "named": true,
-            "value": "language"
-          }
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "IMMEDIATE_TOKEN",
-                  "content": {
-                    "type": "STRING",
-                    "value": "["
-                  }
-                },
-                {
-                  "type": "FIELD",
-                  "name": "parameters",
-                  "content": {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "REPEAT",
-                      "content": {
-                        "type": "ALIAS",
-                        "content": {
-                          "type": "PATTERN",
-                          "value": "[^\\r\\n\\p{Z}\\]]+"
-                        },
-                        "named": true,
-                        "value": "expr"
-                      }
-                    },
-                    "named": true,
-                    "value": "parameters"
-                  }
-                },
-                {
-                  "type": "STRING",
-                  "value": "]"
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "IMMEDIATE_TOKEN",
-          "content": {
-            "type": "STRING",
-            "value": "{"
+            "type": "PATTERN",
+            "value": "src_[^\\s\\[\\{]+\\[[^\\r\\n\\[\\]]*\\]\\{"
           }
         }
       ]
@@ -6151,7 +6086,7 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_inline_code"
+      "name": "error_sentinel"
     }
   ],
   "inline": [
