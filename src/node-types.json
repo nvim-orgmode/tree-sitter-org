@@ -146,6 +146,21 @@
     }
   },
   {
+    "type": "code",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "expr",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "comment",
     "named": true,
     "fields": {},
@@ -169,6 +184,10 @@
       "required": false,
       "types": [
         {
+          "type": "code",
+          "named": true
+        },
+        {
           "type": "expr",
           "named": true
         },
@@ -186,6 +205,10 @@
         },
         {
           "type": "timestamp",
+          "named": true
+        },
+        {
+          "type": "verbatim",
           "named": true
         }
       ]
@@ -200,6 +223,10 @@
       "required": false,
       "types": [
         {
+          "type": "code",
+          "named": true
+        },
+        {
           "type": "expr",
           "named": true
         },
@@ -217,6 +244,10 @@
         },
         {
           "type": "timestamp",
+          "named": true
+        },
+        {
+          "type": "verbatim",
           "named": true
         }
       ]
@@ -442,6 +473,10 @@
         "required": false,
         "types": [
           {
+            "type": "code",
+            "named": true
+          },
+          {
             "type": "expr",
             "named": true
           },
@@ -459,6 +494,10 @@
           },
           {
             "type": "timestamp",
+            "named": true
+          },
+          {
+            "type": "verbatim",
             "named": true
           }
         ]
@@ -562,6 +601,10 @@
       "required": false,
       "types": [
         {
+          "type": "code",
+          "named": true
+        },
+        {
           "type": "expr",
           "named": true
         },
@@ -579,6 +622,10 @@
         },
         {
           "type": "timestamp",
+          "named": true
+        },
+        {
+          "type": "verbatim",
           "named": true
         }
       ]
@@ -813,6 +860,10 @@
       "required": false,
       "types": [
         {
+          "type": "code",
+          "named": true
+        },
+        {
           "type": "expr",
           "named": true
         },
@@ -830,6 +881,10 @@
         },
         {
           "type": "timestamp",
+          "named": true
+        },
+        {
+          "type": "verbatim",
           "named": true
         }
       ]
@@ -1126,6 +1181,10 @@
       "required": false,
       "types": [
         {
+          "type": "code",
+          "named": true
+        },
+        {
           "type": "expr",
           "named": true
         },
@@ -1143,6 +1202,25 @@
         },
         {
           "type": "timestamp",
+          "named": true
+        },
+        {
+          "type": "verbatim",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "verbatim",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "expr",
           "named": true
         }
       ]

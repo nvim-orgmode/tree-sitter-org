@@ -1,6 +1,7 @@
+#include "tree_sitter/alloc.h"
+#include "tree_sitter/parser.h"
 #include <assert.h>
 #include <stdio.h>
-#include <tree_sitter/parser.h>
 #include <wctype.h>
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -44,6 +45,8 @@ enum TokenType {
     SECTIONEND,
     ENDOFFILE,
     LINKOPEN,
+    VERBATIMOPEN,
+    CODEOPEN,
     ERROR_SENTINEL
 };
 
@@ -70,14 +73,80 @@ typedef struct {
     stack *indent_length_stack;
     stack *bullet_stack;
     stack *section_stack;
+    int32_t last_lookahead;
 } Scanner;
 
-static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
+typedef struct CustomLexer CustomLexer;
 
-static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
+struct CustomLexer {
+    TSLexer *original;
+    Scanner *scanner;
+    int32_t prev_lookahead;
+    int32_t lookahead;
+    void (*mark_end)(CustomLexer *);
+    void (*advance)(CustomLexer *);
+    void (*skip)(CustomLexer *);
+    void (*result_symbol)(CustomLexer *, TSSymbol symbol);
+    uint32_t (*get_column)(CustomLexer *);
+};
+
+static void custom_mark_end(CustomLexer *lexer) {
+    lexer->original->mark_end(lexer->original);
+}
+
+static void custom_advance(CustomLexer *lexer) {
+    lexer->prev_lookahead = lexer->original->lookahead;
+    lexer->scanner->last_lookahead = lexer->original->lookahead;
+    lexer->original->advance(lexer->original, false);
+    lexer->lookahead = lexer->original->lookahead;
+}
+
+static void custom_skip(CustomLexer *lexer) {
+    lexer->prev_lookahead = lexer->original->lookahead;
+    lexer->scanner->last_lookahead = lexer->original->lookahead;
+    lexer->original->advance(lexer->original, true);
+    lexer->lookahead = lexer->original->lookahead;
+}
+
+static void custom_result_symbol(CustomLexer *lexer, TSSymbol symbol) {
+    lexer->original->result_symbol = symbol;
+}
+
+static uint32_t custom_get_column(CustomLexer *lexer) {
+    return lexer->original->get_column(lexer->original);
+}
+
+static CustomLexer *custom_lexer_new(TSLexer *original, Scanner *scanner) {
+    CustomLexer *lexer = (CustomLexer *)ts_malloc(sizeof(CustomLexer));
+    lexer->original = original;
+    lexer->scanner = scanner;
+    lexer->advance = custom_advance;
+    lexer->skip = custom_skip;
+    lexer->mark_end = custom_mark_end;
+    lexer->result_symbol = custom_result_symbol;
+    lexer->get_column = custom_get_column;
+    lexer->lookahead = original->lookahead;
+    return lexer;
+}
+
+static const bool valid_pre_marker_chars[256] = {
+    [' '] = true, ['('] = true, ['-'] = true, ['\''] = true, ['"'] = true,
+    ['{'] = true, ['*'] = true, ['/'] = true, ['_'] = true,  ['+'] = true};
+
+static const bool valid_post_marker_chars[256] = {
+    [' '] = true,  [')'] = true, ['-'] = true, ['}'] = true, ['"'] = true,
+    ['\''] = true, [':'] = true, [';'] = true, ['!'] = true, ['\\'] = true,
+    ['['] = true,  [','] = true, ['.'] = true, ['?'] = true, ['*'] = true,
+    ['/'] = true,  ['_'] = true, ['+'] = true};
+
+static inline void advance(CustomLexer *lexer) { lexer->advance(lexer); }
+
+static inline void skip(CustomLexer *lexer) { lexer->skip(lexer); }
 
 static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
+
+    buffer[i++] = scanner->last_lookahead;
 
     size_t indent_count = scanner->indent_length_stack->len - 1;
     if (indent_count > UINT8_MAX)
@@ -121,6 +190,8 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
 
     size_t i = 0;
 
+    scanner->last_lookahead = (int32_t)buffer[i++];
+
     size_t indent_count = (uint8_t)buffer[i++];
 
     for (; i <= indent_count; i++)
@@ -131,14 +202,14 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
         VEC_PUSH(scanner->section_stack, buffer[i]);
 }
 
-static bool dedent(Scanner *scanner, TSLexer *lexer) {
+static bool dedent(Scanner *scanner, CustomLexer *lexer) {
     VEC_POP(scanner->indent_length_stack);
     VEC_POP(scanner->bullet_stack);
-    lexer->result_symbol = LISTEND;
+    lexer->result_symbol(lexer, LISTEND);
     return true;
 }
 
-static Bullet getbullet(TSLexer *lexer) {
+static Bullet getbullet(CustomLexer *lexer) {
     if (lexer->lookahead == '-') {
         advance(lexer);
         if (iswspace(lexer->lookahead))
@@ -190,7 +261,10 @@ static Bullet getbullet(TSLexer *lexer) {
     return NOTABULLET;
 }
 
-static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
+static bool scan(Scanner *scanner, TSLexer *tslexer,
+                 const bool *valid_symbols) {
+    CustomLexer *lexer = custom_lexer_new(tslexer, scanner);
+
     // Error recovery
     if (valid_symbols[ERROR_SENTINEL]) {
         return false;
@@ -206,11 +280,11 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             indent_length += 8;
         } else if (lexer->lookahead == '\0') {
             if (valid_symbols[LISTEND]) {
-                lexer->result_symbol = LISTEND;
+                lexer->result_symbol(lexer, LISTEND);
             } else if (valid_symbols[SECTIONEND]) {
-                lexer->result_symbol = SECTIONEND;
+                lexer->result_symbol(lexer, SECTIONEND);
             } else if (valid_symbols[ENDOFFILE]) {
-                lexer->result_symbol = ENDOFFILE;
+                lexer->result_symbol(lexer, ENDOFFILE);
             } else
                 return false;
 
@@ -249,7 +323,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             return dedent(scanner, lexer);
         } else if (indent_length == VEC_BACK(scanner->indent_length_stack)) {
             if (getbullet(lexer) == VEC_BACK(scanner->bullet_stack)) {
-                lexer->result_symbol = LISTITEMEND;
+                lexer->result_symbol(lexer, LISTITEMEND);
                 return true;
             }
             return dedent(scanner, lexer);
@@ -273,11 +347,11 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         if (valid_symbols[SECTIONEND] && iswspace(lexer->lookahead) &&
             stars > 0 && stars <= VEC_BACK(scanner->section_stack)) {
             VEC_POP(scanner->section_stack);
-            lexer->result_symbol = SECTIONEND;
+            lexer->result_symbol(lexer, SECTIONEND);
             return true;
         } else if (valid_symbols[HLSTARS] && iswspace(lexer->lookahead)) {
             VEC_PUSH(scanner->section_stack, stars);
-            lexer->result_symbol = HLSTARS;
+            lexer->result_symbol(lexer, HLSTARS);
             return true;
         }
         return false;
@@ -291,13 +365,13 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             bullet == VEC_BACK(scanner->bullet_stack) &&
             indent_length == VEC_BACK(scanner->indent_length_stack)) {
             lexer->mark_end(lexer);
-            lexer->result_symbol = BULLET;
+            lexer->result_symbol(lexer, BULLET);
             return true;
         } else if (valid_symbols[LISTSTART] && bullet != NOTABULLET &&
                    indent_length > VEC_BACK(scanner->indent_length_stack)) {
             VEC_PUSH(scanner->indent_length_stack, indent_length);
             VEC_PUSH(scanner->bullet_stack, bullet);
-            lexer->result_symbol = LISTSTART;
+            lexer->result_symbol(lexer, LISTSTART);
             return true;
         }
     }
@@ -309,19 +383,65 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             lexer->mark_end(lexer);
             bool has_content = false;
             while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
-                int32_t prev_lookahead = lexer->lookahead;
                 advance(lexer);
-                if (prev_lookahead == ']' && lexer->lookahead == ']') {
+                if (lexer->prev_lookahead == ']' && lexer->lookahead == ']') {
                     advance(lexer);
                     if (!has_content) {
                         return false;
                     }
-                    lexer->result_symbol = LINKOPEN;
+                    lexer->result_symbol(lexer, LINKOPEN);
                     return true;
                 }
                 has_content = true;
             }
         }
+    }
+
+    if (valid_symbols[VERBATIMOPEN]) {
+        printf("prev: '%c', lookahead: '%c'\n", lexer->prev_lookahead,
+              lexer->lookahead);
+        // if (lexer->lookahead == '=') {
+        //     if (lexer->get_column(lexer) == 0) {
+        //         advance(lexer);
+        //         lexer->mark_end(lexer);
+        //     }
+        // }
+        // if (lexer->lookahead == '=') {
+        //     if (lexer->get_column(lexer) == 0 ||
+        //         valid_pre_marker_chars[lexer->prev_lookahead]) {
+        //         advance(lexer);
+        //         lexer->mark_end(lexer);
+        //     } else {
+        //         skip(lexer);
+        //         return false;
+        //     }
+        // } else {
+        //     skip(lexer);
+        //     return false;
+        // }
+        // if (lexer->lookahead == '=' &&
+        //     (lexer->get_column(lexer) == 0 ||
+        //      valid_pre_marker_chars[scanner->last_lookahead])) {
+        //     advance(lexer);
+        //     lexer->mark_end(lexer);
+        // } else {
+        //     skip(lexer);
+        //     return false;
+        // }
+        // bool has_content = false;
+        // while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
+        //     advance(lexer);
+        //     if (lexer->lookahead == '=') {
+        //         advance(lexer);
+        //         if (!valid_post_marker_chars[lexer->lookahead] ||
+        //             !has_content || lexer->prev_lookahead == ' ') {
+        //             return false;
+        //         }
+        //         lexer->result_symbol(lexer, VERBATIMOPEN);
+        //         return true;
+        //     }
+        //     has_content = true;
+        // }
     }
 
     return false; // default

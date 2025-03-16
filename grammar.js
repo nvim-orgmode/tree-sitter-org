@@ -16,6 +16,8 @@ const org_grammar = {
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
     $._link_open,
+    $._verbatim_open,
+    $._code_open,
     $.error_sentinel
   ],
 
@@ -91,6 +93,18 @@ const org_grammar = {
       token(']['),
       field('desc', repeat(alias($._expr_with_space, $.expr))),
       token(']]')
+    ),
+
+    verbatim: $ => seq(
+      alias($._verbatim_open, '='),
+      repeat1($.expr),
+      token.immediate('=')
+    ),
+
+    code: $ => seq(
+      alias($._code_open, '~'),
+      repeat1($.expr),
+      token('~')
     ),
 
     priority: _ => token(/\[#\w+\]/),
@@ -374,6 +388,8 @@ const org_grammar = {
     _markup: $ => choice(
       $.expr,
       $.inline_code_block,
+      $.verbatim,
+      $.code,
       $.link,
       $.link_desc,
       $.timestamp,
@@ -398,7 +414,6 @@ const org_grammar = {
       expr('non-immediate', token, '', ' '),
       repeat(expr('immediate', token.immediate, '', ' '))
     ),
-
   }
 };
 
