@@ -27,6 +27,5 @@ source = {
 build = {
   type = "treesitter-parser",
   lang = "org",
-  sources = { "src/parser.c", "src/scanner.c" },
-  copy_directories = { "queries" },
+  sources = { "src/parser.c", "src/scanner.c" }
 }
