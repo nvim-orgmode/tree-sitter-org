@@ -8,7 +8,7 @@
 (headline (stars) @OrgStars2 (#match? @OrgStars2 "^(\\*{3})*\\*\\*$") (item) @OrgHeadlineLevel2)
 (headline (stars) @OrgStars3 (#match? @OrgStars3 "^(\\*{3})*\\*\\*\\*$") (item) @OrgHeadlineLevel3)
 
-; This one should be generated after scanning for configuration, using 
+; This one should be generated after scanning for configuration, using
 ; something like #any-of? for keywords, but could use a match if allowing
 ; markup on todo keywords is desirable.
 (item . (expr) @OrgKeywordTodo (#eq? @OrgKeywordTodo "TODO"))
