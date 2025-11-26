@@ -106,6 +106,25 @@ const org_grammar = {
       token(/src_[^\s\[\{]+\[[^\r\n\[\]]*\]\{/)
     ),
 
+    inline_math_block: $ => seq(
+      field('open', alias('\\(', $.open)),
+      field('contents', alias(repeat($.expr), $.contents)),
+      field('close', alias('\\)', $.close))
+    ),
+
+    display_math_block: $ => choice(
+      seq(
+        field('open', alias('\\[', $.open)),
+        field('contents', alias(repeat($.expr), $.contents)),
+        field('close', alias('\\]', $.close))
+      ),
+      seq(
+        field('open', alias('$$', $.open)),
+        field('contents', alias(repeat($.expr), $.contents)),
+        field('close', alias('$$', $.close))
+      ),
+    ),
+
     // Can't have multiple in a row
     _multis: $ => choice(
       $.paragraph,
@@ -374,6 +393,8 @@ const org_grammar = {
     _markup: $ => choice(
       $.expr,
       $.inline_code_block,
+      $.inline_math_block,
+      $.display_math_block,
       $.link,
       $.link_desc,
       $.timestamp,

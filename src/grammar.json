@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "org",
   "rules": {
     "document": {
@@ -334,6 +335,152 @@
             "type": "PATTERN",
             "value": "src_[^\\s\\[\\{]+\\[[^\\r\\n\\[\\]]*\\]\\{"
           }
+        }
+      ]
+    },
+    "inline_math_block": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "open",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "STRING",
+              "value": "\\("
+            },
+            "named": true,
+            "value": "open"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "contents",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "REPEAT",
+              "content": {
+                "type": "SYMBOL",
+                "name": "expr"
+              }
+            },
+            "named": true,
+            "value": "contents"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "close",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "STRING",
+              "value": "\\)"
+            },
+            "named": true,
+            "value": "close"
+          }
+        }
+      ]
+    },
+    "display_math_block": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "open",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "\\["
+                },
+                "named": true,
+                "value": "open"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "contents",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "REPEAT",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "expr"
+                  }
+                },
+                "named": true,
+                "value": "contents"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "close",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "\\]"
+                },
+                "named": true,
+                "value": "close"
+              }
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "open",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "$$"
+                },
+                "named": true,
+                "value": "open"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "contents",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "REPEAT",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "expr"
+                  }
+                },
+                "named": true,
+                "value": "contents"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "close",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "$$"
+                },
+                "named": true,
+                "value": "close"
+              }
+            }
+          ]
         }
       ]
     },
@@ -2345,6 +2492,14 @@
         {
           "type": "SYMBOL",
           "name": "inline_code_block"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "inline_math_block"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "display_math_block"
         },
         {
           "type": "SYMBOL",
@@ -6096,5 +6251,6 @@
     "_directive_list",
     "_body_contents"
   ],
-  "supertypes": []
+  "supertypes": [],
+  "reserved": {}
 }
