@@ -16,6 +16,8 @@ const org_grammar = {
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
     $._link_open,
+    $.latex_math_single_dollar,
+    $.text_dollar,
     $.error_sentinel
   ],
 
@@ -106,10 +108,17 @@ const org_grammar = {
       token(/src_[^\s\[\{]+\[[^\r\n\[\]]*\]\{/)
     ),
 
-    inline_math_block: $ => seq(
-      field('open', alias('\\(', $.open)),
-      field('contents', alias(repeat($.expr), $.contents)),
-      field('close', alias('\\)', $.close))
+    inline_math_block: $ => choice(
+      seq(
+        field('open', alias('\\(', $.open)),
+        field('contents', alias(repeat($.expr), $.contents)),
+        field('close', alias('\\)', $.close))
+      ),
+      seq(
+        field('open', alias($.latex_math_single_dollar, $.open)),
+        field('contents', alias(repeat($.expr), $.contents)),
+        field('close', alias($.latex_math_single_dollar, $.close))
+      ),
     ),
 
     display_math_block: $ => choice(

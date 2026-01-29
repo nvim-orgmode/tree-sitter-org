@@ -44,6 +44,8 @@ enum TokenType {
     SECTIONEND,
     ENDOFFILE,
     LINKOPEN,
+    LATEX_MATH_SINGLE_DOLLAR,
+    TEXT_DOLLAR,
     ERROR_SENTINEL
 };
 
@@ -70,6 +72,7 @@ typedef struct {
     stack *indent_length_stack;
     stack *bullet_stack;
     stack *section_stack;
+    bool in_dollar_math;
 } Scanner;
 
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
@@ -105,6 +108,8 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
         buffer[i++] = scanner->section_stack->data[iter];
     }
 
+    buffer[i++] = scanner->in_dollar_math;
+
     return i;
 }
 
@@ -115,6 +120,7 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     VEC_PUSH(scanner->indent_length_stack, -1);
     VEC_CLEAR(scanner->bullet_stack);
     VEC_PUSH(scanner->bullet_stack, NOTABULLET);
+    scanner->in_dollar_math = false;
 
     if (length == 0)
         return;
@@ -127,8 +133,9 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
         VEC_PUSH(scanner->indent_length_stack, buffer[i]);
     for (; i <= 2 * indent_count; i++)
         VEC_PUSH(scanner->bullet_stack, buffer[i]);
-    for (; i < length; i++)
+    for (; i < length - 1; i++)
         VEC_PUSH(scanner->section_stack, buffer[i]);
+    scanner->in_dollar_math = buffer[i];
 }
 
 static bool dedent(Scanner *scanner, TSLexer *lexer) {
@@ -320,6 +327,54 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
                     return true;
                 }
                 has_content = true;
+            }
+        }
+    }
+
+    // $ LaTeX math delimiters
+    if (lexer->lookahead == '$') {
+        advance(lexer);
+        lexer->mark_end(lexer);
+        if (scanner->in_dollar_math &&
+            valid_symbols[LATEX_MATH_SINGLE_DOLLAR]) {
+            // look for closing dollar
+            scanner->in_dollar_math = false;
+            lexer->result_symbol = LATEX_MATH_SINGLE_DOLLAR;
+            return true;
+        }
+
+        if (valid_symbols[LATEX_MATH_SINGLE_DOLLAR]) {
+            // look for opening dollar
+            if (lexer->lookahead == '$') {
+                return false; // ignore $$ (handled by grammar)
+            }
+            while (lexer->lookahead != '\n' && !lexer->eof(lexer)) {
+                // check until EOL for closing dollar
+                advance(lexer);
+                if (lexer->lookahead == '$') {
+                    advance(lexer);
+                    if (('0' <= lexer->lookahead && lexer->lookahead <= '9') ||
+                        ('A' <= lexer->lookahead && lexer->lookahead <= 'Z') ||
+                        ('a' <= lexer->lookahead && lexer->lookahead <= 'z')) {
+                        // next dollar is part of word
+                        if (valid_symbols[TEXT_DOLLAR]) {
+                            lexer->result_symbol = TEXT_DOLLAR;
+                            return true;
+                        }
+                    } else {
+                        if (valid_symbols[LATEX_MATH_SINGLE_DOLLAR]) {
+                            scanner->in_dollar_math = true;
+                            lexer->result_symbol = LATEX_MATH_SINGLE_DOLLAR;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // didn't find closing dollar
+            if (valid_symbols[TEXT_DOLLAR]) {
+                lexer->result_symbol = TEXT_DOLLAR;
+                return true;
             }
         }
     }
