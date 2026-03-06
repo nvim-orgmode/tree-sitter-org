@@ -407,6 +407,33 @@ const org_grammar = {
       $.link,
       $.link_desc,
       $.timestamp,
+      $.citation,
+    ),
+
+    citation: $ => choice(
+      seq(
+        alias(token(prec('special', '[cite:')), '[cite:'),
+        repeat(choice(
+          field('reference', $.citation_reference),
+          alias(token(/[^@\]\n\r]+/), $.expr),
+        )),
+        ']',
+      ),
+      seq(
+        alias(token(prec('special', '[cite/')), '[cite/'),
+        field('style', alias(token.immediate(/[^\s:]+/), $.expr)),
+        token.immediate(':'),
+        repeat(choice(
+          field('reference', $.citation_reference),
+          alias(token(/[^@\]\n\r]+/), $.expr),
+        )),
+        ']',
+      ),
+    ),
+
+    citation_reference: $ => seq(
+      '@',
+      field('key', alias(token.immediate(/[\p{L}\p{N}!$&*+./:<>?^_`|-]+/u), $.expr)),
     ),
 
     _immediate_expr: $ => repeat1(expr('immediate', token.immediate)),

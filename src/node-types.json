@@ -146,6 +146,58 @@
     }
   },
   {
+    "type": "citation",
+    "named": true,
+    "fields": {
+      "reference": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "citation_reference",
+            "named": true
+          }
+        ]
+      },
+      "style": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "expr",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "expr",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "citation_reference",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "comment",
     "named": true,
     "fields": {},
@@ -168,6 +220,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "citation",
+          "named": true
+        },
         {
           "type": "display_math_block",
           "named": true
@@ -207,6 +263,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "citation",
+          "named": true
+        },
         {
           "type": "display_math_block",
           "named": true
@@ -495,6 +555,10 @@
         "required": false,
         "types": [
           {
+            "type": "citation",
+            "named": true
+          },
+          {
             "type": "display_math_block",
             "named": true
           },
@@ -658,6 +722,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "citation",
+          "named": true
+        },
         {
           "type": "display_math_block",
           "named": true
@@ -917,6 +985,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "citation",
+          "named": true
+        },
         {
           "type": "display_math_block",
           "named": true
@@ -1239,6 +1311,10 @@
       "required": false,
       "types": [
         {
+          "type": "citation",
+          "named": true
+        },
+        {
           "type": "display_math_block",
           "named": true
         },
@@ -1423,6 +1499,14 @@
   },
   {
     "type": "[[",
+    "named": false
+  },
+  {
+    "type": "[cite/",
+    "named": false
+  },
+  {
+    "type": "[cite:",
     "named": false
   },
   {
