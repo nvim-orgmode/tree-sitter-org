@@ -3389,3 +3389,14 @@ Citation.9 - Does not match [citekey] without colon or slash
   body: (body
     (paragraph
       (expr))))
+
+================================================================================
+Citation.10 - Must have at least one reference
+================================================================================
+[cite/style: missing reference]
+--------------------------------------------------------------------------------
+
+(document
+  (ERROR
+    (expr)
+    (expr)))

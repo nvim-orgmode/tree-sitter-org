@@ -413,6 +413,8 @@ const org_grammar = {
     citation: $ => choice(
       seq(
         alias(token(prec('special', '[cite:')), '[cite:'),
+        repeat(alias(token(/[^@\]\n\r]+/), $.expr)), // prefix
+        field('reference', $.citation_reference), // see at least one reference
         repeat(choice(
           field('reference', $.citation_reference),
           alias(token(/[^@\]\n\r]+/), $.expr),
@@ -423,6 +425,8 @@ const org_grammar = {
         alias(token(prec('special', '[cite/')), '[cite/'),
         field('style', alias(token.immediate(/[^\s:]+/), $.expr)),
         token.immediate(':'),
+        repeat(alias(token(/[^@\]\n\r]+/), $.expr)), // prefix
+        field('reference', $.citation_reference), // see at least one reference
         repeat(choice(
           field('reference', $.citation_reference),
           alias(token(/[^@\]\n\r]+/), $.expr),
