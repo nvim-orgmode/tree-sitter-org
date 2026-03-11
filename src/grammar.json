@@ -2564,6 +2564,216 @@
         {
           "type": "SYMBOL",
           "name": "timestamp"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "citation"
+        }
+      ]
+    },
+    "citation": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": "special",
+                  "content": {
+                    "type": "STRING",
+                    "value": "[cite:"
+                  }
+                }
+              },
+              "named": false,
+              "value": "[cite:"
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "TOKEN",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^@\\]\\n\\r]+"
+                  }
+                },
+                "named": true,
+                "value": "expr"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "reference",
+              "content": {
+                "type": "SYMBOL",
+                "name": "citation_reference"
+              }
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "reference",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "citation_reference"
+                    }
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "TOKEN",
+                      "content": {
+                        "type": "PATTERN",
+                        "value": "[^@\\]\\n\\r]+"
+                      }
+                    },
+                    "named": true,
+                    "value": "expr"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "STRING",
+              "value": "]"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": "special",
+                  "content": {
+                    "type": "STRING",
+                    "value": "[cite/"
+                  }
+                }
+              },
+              "named": false,
+              "value": "[cite/"
+            },
+            {
+              "type": "FIELD",
+              "name": "style",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "IMMEDIATE_TOKEN",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\s:]+"
+                  }
+                },
+                "named": true,
+                "value": "expr"
+              }
+            },
+            {
+              "type": "IMMEDIATE_TOKEN",
+              "content": {
+                "type": "STRING",
+                "value": ":"
+              }
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "TOKEN",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^@\\]\\n\\r]+"
+                  }
+                },
+                "named": true,
+                "value": "expr"
+              }
+            },
+            {
+              "type": "FIELD",
+              "name": "reference",
+              "content": {
+                "type": "SYMBOL",
+                "name": "citation_reference"
+              }
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "reference",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "citation_reference"
+                    }
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "TOKEN",
+                      "content": {
+                        "type": "PATTERN",
+                        "value": "[^@\\]\\n\\r]+"
+                      }
+                    },
+                    "named": true,
+                    "value": "expr"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "STRING",
+              "value": "]"
+            }
+          ]
+        }
+      ]
+    },
+    "citation_reference": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@"
+        },
+        {
+          "type": "FIELD",
+          "name": "key",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "IMMEDIATE_TOKEN",
+              "content": {
+                "type": "PATTERN",
+                "value": "[\\p{L}\\p{N}!$&*+./:<>?^_`|-]+",
+                "flags": "u"
+              }
+            },
+            "named": true,
+            "value": "expr"
+          }
         }
       ]
     },
