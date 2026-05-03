@@ -17,6 +17,8 @@ const org_grammar = {
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
     $._link_open,
+    $._footnote_open,
+    $._fndef_open,
     $.latex_math_single_dollar,
     $.text_dollar,
     $._bold_open,
@@ -85,7 +87,7 @@ const org_grammar = {
         repeat1(seq(
           choice(
             seq($._multis, $._nl),
-            seq(optional(choice($.paragraph, $.fndef)), $._element),
+            seq(optional(choice($.fndef, $.paragraph)), $._element),
           ),
           repeat($._nl),
         )),
@@ -133,6 +135,36 @@ const org_grammar = {
       ),
     ),
 
+    inline_latex: $ => prec.right(seq(
+      field('command', alias(token(/\\\p{L}+\*?/u), $.command)),
+      repeat(choice(
+        field('option', $.latex_optional_argument),
+        field('argument', $.latex_argument),
+      )),
+    )),
+
+    latex_argument: $ => seq(
+      field('open', alias(token.immediate('{'), $.open)),
+      field('contents', alias(repeat(choice(
+        $.expr,
+        $.inline_latex,
+        $.latex_argument,
+        $.latex_optional_argument,
+      )), $.contents)),
+      field('close', alias(choice(token('}'), token.immediate('}')), $.close)),
+    ),
+
+    latex_optional_argument: $ => seq(
+      field('open', alias(token.immediate('['), $.open)),
+      field('contents', alias(repeat(choice(
+        $.expr,
+        $.inline_latex,
+        $.latex_argument,
+        $.latex_optional_argument,
+      )), $.contents)),
+      field('close', alias(choice(token(']'), token.immediate(']')), $.close)),
+    ),
+
     display_math_block: $ => choice(
       seq(
         field('open', alias('\\[', $.open)),
@@ -146,11 +178,11 @@ const org_grammar = {
       ),
     ),
 
-    // Can't have multiple in a row
+    // Can't have multiple in a row (fnDefs are an exception and can be consecutive)
     _multis: $ => choice(
+      seq($.fndef, repeat($.fndef)),
       $.paragraph,
       $._directive_list,
-      $.fndef,
     ),
 
     _element: $ => choice(
@@ -254,15 +286,21 @@ const org_grammar = {
 
     paragraph: $ => seq(optional($._directive_list), $._multiline_text),
 
-    fndef: $ => seq(
+    fndef: $ => prec.dynamic(1, seq(
       optional($._directive_list),
       seq(
-        alias(/\[fn:/i, '[fn:'),
-        field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
-        ']',
+        alias($._fndef_open, '[fn:'),
+        field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
+        token.immediate(']'),
       ),
       field('description', alias($._multiline_text, $.description))
-    ),
+    )),
+
+    footnote_reference: $ => prec(-1, seq(
+      alias($._footnote_open, '[fn:'),
+      field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
+      token.immediate(']'),
+    )),
 
     _directive_list: $ => repeat1(field('directive', $.directive)),
     directive: $ => seq(
@@ -418,14 +456,16 @@ const org_grammar = {
       $.strikethrough,
       $.code,
       $.verbatim,
-      $.expr,
       $.inline_code_block,
       $.inline_math_block,
+      $.inline_latex,
       $.display_math_block,
       $.link,
       $.link_desc,
       $.timestamp,
+      $.footnote_reference,
       $.citation,
+      $.expr,
     ),
 
     bold: $ => prec.right(seq(
@@ -555,10 +595,12 @@ function nestedMarkup($) {
     nestedExpr(),
     $.inline_code_block,
     $.inline_math_block,
+    $.inline_latex,
     $.display_math_block,
     $.link,
     $.link_desc,
     $.timestamp,
+    $.footnote_reference,
     $.citation,
   )
 }

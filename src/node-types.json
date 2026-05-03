@@ -313,7 +313,15 @@
           "named": true
         },
         {
+          "type": "footnote_reference",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
+          "named": true
+        },
+        {
+          "type": "inline_latex",
           "named": true
         },
         {
@@ -322,6 +330,14 @@
         },
         {
           "type": "italic",
+          "named": true
+        },
+        {
+          "type": "latex_argument",
+          "named": true
+        },
+        {
+          "type": "latex_optional_argument",
           "named": true
         },
         {
@@ -380,7 +396,15 @@
           "named": true
         },
         {
+          "type": "footnote_reference",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
+          "named": true
+        },
+        {
+          "type": "inline_latex",
           "named": true
         },
         {
@@ -666,6 +690,22 @@
     }
   },
   {
+    "type": "footnote_reference",
+    "named": true,
+    "fields": {
+      "label": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "formula",
     "named": true,
     "fields": {
@@ -694,7 +734,15 @@
             "named": true
           },
           {
+            "type": "footnote_reference",
+            "named": true
+          },
+          {
             "type": "inline_code_block",
+            "named": true
+          },
+          {
+            "type": "inline_latex",
             "named": true
           },
           {
@@ -804,6 +852,42 @@
         "types": [
           {
             "type": "open",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "inline_latex",
+    "named": true,
+    "fields": {
+      "argument": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "latex_argument",
+            "named": true
+          }
+        ]
+      },
+      "command": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "command",
+            "named": true
+          }
+        ]
+      },
+      "option": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "latex_optional_argument",
             "named": true
           }
         ]
@@ -922,7 +1006,15 @@
           "named": true
         },
         {
+          "type": "footnote_reference",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
+          "named": true
+        },
+        {
+          "type": "inline_latex",
           "named": true
         },
         {
@@ -958,6 +1050,42 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "latex_argument",
+    "named": true,
+    "fields": {
+      "close": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "close",
+            "named": true
+          }
+        ]
+      },
+      "contents": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "contents",
+            "named": true
+          }
+        ]
+      },
+      "open": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "open",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1004,6 +1132,42 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "latex_optional_argument",
+    "named": true,
+    "fields": {
+      "close": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "close",
+            "named": true
+          }
+        ]
+      },
+      "contents": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "contents",
+            "named": true
+          }
+        ]
+      },
+      "open": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "open",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1209,7 +1373,15 @@
           "named": true
         },
         {
+          "type": "footnote_reference",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
+          "named": true
+        },
+        {
+          "type": "inline_latex",
           "named": true
         },
         {
@@ -1630,7 +1802,15 @@
           "named": true
         },
         {
+          "type": "footnote_reference",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
+          "named": true
+        },
+        {
+          "type": "inline_latex",
           "named": true
         },
         {
@@ -1926,6 +2106,10 @@
   },
   {
     "type": "close",
+    "named": true
+  },
+  {
+    "type": "command",
     "named": true
   },
   {

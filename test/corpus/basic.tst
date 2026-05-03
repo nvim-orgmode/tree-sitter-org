@@ -215,6 +215,84 @@ Footnote.3 - Precedence
       name: (expr))))
 
 ================================================================================
+Footnote.4 - Inline reference in paragraph
+================================================================================
+a [fn:note] b
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (footnote_reference
+        label: (expr))
+      (expr))))
+
+================================================================================
+Footnote.5 - Inline reference in drawer
+================================================================================
+:name:
+[fn:note]
+:END:
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (drawer
+      name: (expr)
+      contents: (contents
+        (footnote_reference
+          label: (expr))))))
+
+================================================================================
+Footnote.6 - Inline reference in headline
+================================================================================
+* head [fn:note] tail
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (footnote_reference
+          label: (expr))
+        (expr)))))
+
+================================================================================
+Footnote.7 - Inline reference requires closing bracket
+================================================================================
+a [fn:note b
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+Footnote.8 - Consecutive fndefs without blank line
+================================================================================
+[fn:firstdef] description
+[fn:seconddef] second description
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)))
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)
+        (expr)))))
+
+================================================================================
 Drawer.1 - Basic
 ================================================================================
 :name:
@@ -713,6 +791,53 @@ Markup.7 - Invalid post-close character
       (expr)
       (expr)
       (expr)
+      (expr))))
+
+================================================================================
+Markup.8 - Empty delimiters stay text
+================================================================================
+a **** //// == ~~
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+Markup.9 - Unmatched markup does not bleed to next line
+================================================================================
+foo =broken
+this *bold* /italic/ text
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (bold
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (italic
+        open: (open)
+        contents: (contents)
+        close: (close))
       (expr))))
 
 ================================================================================
@@ -3433,6 +3558,126 @@ $k$-dimensional
           (expr))
         (close))
       (expr))))
+
+================================================================================
+Latex.1 - Command
+================================================================================
+\alpha
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (inline_latex
+        command: (command)))))
+
+================================================================================
+Latex.2 - Arguments
+================================================================================
+\frac{a}{b}
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (inline_latex
+        command: (command)
+        argument: (latex_argument
+          open: (open)
+          contents: (contents
+            (expr))
+          close: (close))
+        argument: (latex_argument
+          open: (open)
+          contents: (contents
+            (expr))
+          close: (close))))))
+
+================================================================================
+Latex.3 - Nested command in argument
+================================================================================
+\textbf{\alpha}
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (inline_latex
+        command: (command)
+        argument: (latex_argument
+          open: (open)
+          contents: (contents
+            (inline_latex
+              command: (command)))
+          close: (close))))))
+
+================================================================================
+Latex.4 - Optional argument
+================================================================================
+\includegraphics[width=3cm]{img}
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (inline_latex
+        command: (command)
+        option: (latex_optional_argument
+          open: (open)
+          contents: (contents
+            (expr)
+            (expr)
+            (expr))
+          close: (close))
+        argument: (latex_argument
+          open: (open)
+          contents: (contents
+            (expr))
+          close: (close))))))
+
+================================================================================
+Latex.5 - Nested argument in option
+================================================================================
+\foo[\textbf{bar}]{baz}
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (inline_latex
+        command: (command)
+        option: (latex_optional_argument
+          open: (open)
+          contents: (contents
+            (inline_latex
+              command: (command)
+              argument: (latex_argument
+                open: (open)
+                contents: (contents
+                  (expr))
+                close: (close))))
+          close: (close))
+        argument: (latex_argument
+          open: (open)
+          contents: (contents
+            (expr))
+          close: (close))))))
+
+================================================================================
+Latex.6 - In headline
+================================================================================
+* head \beta tail
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (inline_latex
+          command: (command))
+        (expr)))))
 
 ================================================================================
 Citation.1 - Simple

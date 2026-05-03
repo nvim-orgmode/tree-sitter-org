@@ -45,6 +45,8 @@ enum TokenType {
     SECTIONEND,
     ENDOFFILE,
     LINKOPEN,
+    FOOTNOTEOPEN,
+    FNDEFOPEN,
     LATEX_MATH_SINGLE_DOLLAR,
     TEXT_DOLLAR,
     BOLD_OPEN,
@@ -385,6 +387,8 @@ static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer
     int32_t delimiter = markup_to_delimiter(markup);
     if (!is_markup_content_char(lexer->lookahead))
         return false;
+    if (lexer->lookahead == delimiter)
+        return false;
 
     int32_t previous = '\0';
     while (lexer->lookahead != '\0' && lexer->lookahead != '\n' &&
@@ -425,6 +429,12 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     // Error recovery
     if (valid_symbols[ERROR_SENTINEL]) {
         return false;
+    }
+
+    // Org inline markup does not span lines, so stale unmatched delimiters from
+    // a previous line must not suppress valid markup on later lines.
+    if (lexer->get_column(lexer) == 0) {
+        VEC_CLEAR(scanner->markup_stack);
     }
 
     // - Section ends
@@ -547,9 +557,12 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
+    if ((valid_symbols[LINKOPEN] || valid_symbols[FOOTNOTEOPEN] ||
+         valid_symbols[FNDEFOPEN]) &&
+        lexer->lookahead == '[') {
+        bool at_bol = lexer->get_column(lexer) == 0;
         advance(lexer);
-        if (lexer->lookahead == '[') {
+        if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
             advance(lexer);
             lexer->mark_end(lexer);
             bool has_content = false;
@@ -565,6 +578,38 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
                     return true;
                 }
                 has_content = true;
+            }
+        }
+
+        if ((valid_symbols[FOOTNOTEOPEN] || valid_symbols[FNDEFOPEN]) &&
+            towlower(lexer->lookahead) == 'f') {
+            advance(lexer);
+            if (towlower(lexer->lookahead) != 'n')
+                return false;
+            advance(lexer);
+            if (lexer->lookahead != ':')
+                return false;
+            advance(lexer);
+            lexer->mark_end(lexer);
+
+            bool has_label = false;
+            while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
+                   lexer->lookahead != '\0' && !iswspace(lexer->lookahead) &&
+                   lexer->lookahead != ']') {
+                has_label = true;
+                advance(lexer);
+            }
+
+            if (has_label && lexer->lookahead == ']') {
+                // Prefer FNDEFOPEN (fndef start) when at beginning of line
+                if (valid_symbols[FNDEFOPEN] && at_bol) {
+                    lexer->result_symbol = FNDEFOPEN;
+                } else if (valid_symbols[FOOTNOTEOPEN]) {
+                    lexer->result_symbol = FOOTNOTEOPEN;
+                } else {
+                    return false;
+                }
+                return true;
             }
         }
     }
