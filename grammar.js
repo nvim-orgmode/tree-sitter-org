@@ -1,6 +1,7 @@
 const asciiSymbols = [ '!', '"', '#', '$', '%', '&', "'", '(', ')', '*',
   '+', ',', '-', '.', '/',  ':', ';', '<', '=', '>', '?', '@', '[', ']',
   '\\', '^', '_', '`', '{', '|', '}', '~' ]
+const markupDelimiters = '*/_+=~'
 
 const org_grammar = {
   name: 'org',
@@ -18,6 +19,18 @@ const org_grammar = {
     $._link_open,
     $.latex_math_single_dollar,
     $.text_dollar,
+    $._bold_open,
+    $._bold_close,
+    $._italic_open,
+    $._italic_close,
+    $._underline_open,
+    $._underline_close,
+    $._strikethrough_open,
+    $._strikethrough_close,
+    $._code_open,
+    $._code_close,
+    $._verbatim_open,
+    $._verbatim_close,
     $.error_sentinel
   ],
 
@@ -41,7 +54,6 @@ const org_grammar = {
     [$.item],
 
     [$._tag_expr_start, $.expr],
-
     // _multiline_text  •  ':'  …
     // Is the ':' continued multiline text or is it a drawer?
     [$.paragraph],
@@ -400,6 +412,12 @@ const org_grammar = {
     )),
 
     _markup: $ => choice(
+      $.bold,
+      $.italic,
+      $.underline,
+      $.strikethrough,
+      $.code,
+      $.verbatim,
       $.expr,
       $.inline_code_block,
       $.inline_math_block,
@@ -408,6 +426,42 @@ const org_grammar = {
       $.link_desc,
       $.timestamp,
       $.citation,
+    ),
+
+    bold: $ => prec.right(seq(
+      field('open', alias($._bold_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._bold_close, $.close))
+    )),
+
+    italic: $ => prec.right(seq(
+      field('open', alias($._italic_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._italic_close, $.close))
+    )),
+
+    underline: $ => prec.right(seq(
+      field('open', alias($._underline_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._underline_close, $.close))
+    )),
+
+    strikethrough: $ => prec.right(seq(
+      field('open', alias($._strikethrough_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._strikethrough_close, $.close))
+    )),
+
+    code: $ => seq(
+      field('open', alias($._code_open, $.open)),
+      field('contents', alias(repeat1($.expr), $.contents)),
+      field('close', alias($._code_close, $.close))
+    ),
+
+    verbatim: $ => seq(
+      field('open', alias($._verbatim_open, $.open)),
+      field('contents', alias(repeat1($.expr), $.contents)),
+      field('close', alias($._verbatim_close, $.close))
     ),
 
     citation: $ => choice(
@@ -450,9 +504,12 @@ const org_grammar = {
       repeat(expr('immediate', token.immediate, '>]'))
     ),
 
-    expr: $ => seq(
-      expr('non-immediate', token),
-      repeat(expr('immediate', token.immediate))
+    expr: $ => choice(
+      token(prec(-1, /[*\/_+=~]/)),
+      seq(
+        expr('non-immediate', token, markupDelimiters),
+        repeat(expr('immediate', token.immediate, markupDelimiters))
+      )
     ),
 
     _expr_with_space: $ => seq(
@@ -466,15 +523,43 @@ const org_grammar = {
 function expr(pr, tfunc, skip = '', extra = '') {
   skip = skip.split("")
   extra = extra.split("")
+  const excluded = skip.length === 0 ? '' : escapeForRegexCharClass(skip.join(''))
   return choice(
     ...asciiSymbols.filter(c => !skip.includes(c)).map(c => tfunc(prec(pr, c))),
     ...extra.map(c => tfunc(prec(pr, c))),
     alias(tfunc(prec(pr, /\p{L}+/)), 'str'),
     alias(tfunc(prec(pr, /\p{N}+/)), 'num'),
-    alias(tfunc(prec(pr, /[^\p{Z}\p{L}\p{N}\t\n\r]/)), 'sym'),
+    alias(tfunc(prec(pr, new RegExp(`[^\\p{Z}\\p{L}\\p{N}\\t\\n\\r${excluded}]`, 'u'))), 'sym'),
      // for checkboxes: ugly, but makes them work..
     // alias(tfunc(prec(pr, 'x')), 'str'),
     // alias(tfunc(prec(pr, 'X')), 'str'),
+  )
+}
+
+function escapeForRegexCharClass(text) {
+  return text.replace(/[\\\-\]\^]/g, '\\$&')
+}
+
+function nestedExpr() {
+  return alias(token(/[^\s*\/_+=~]+/), 'expr')
+}
+
+function nestedMarkup($) {
+  return choice(
+    $.bold,
+    $.italic,
+    $.underline,
+    $.strikethrough,
+    $.code,
+    $.verbatim,
+    nestedExpr(),
+    $.inline_code_block,
+    $.inline_math_block,
+    $.display_math_block,
+    $.link,
+    $.link_desc,
+    $.timestamp,
+    $.citation,
   )
 }
 

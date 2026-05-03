@@ -494,6 +494,8 @@ This is src_lua
     (paragraph
       (expr)
       (expr)
+      (expr)
+      (expr)
       (expr))))
 
 ================================================================================
@@ -505,6 +507,8 @@ This is src_lua[]
 (document
   body: (body
     (paragraph
+      (expr)
+      (expr)
       (expr)
       (expr)
       (expr))))
@@ -543,6 +547,164 @@ This is src_lua[]{}
 InlineBlock.7  - Treated as expr without language
 ================================================================================
 This is src_ test
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+Markup.1 - Simple
+================================================================================
+*bold* /italic/ _underline_ +strike+ =code= ~verbatim~
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (bold
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (italic
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (underline
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (strikethrough
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (code
+        open: (open)
+        contents: (contents
+          (expr))
+        close: (close))
+      (verbatim
+        open: (open)
+        contents: (contents
+          (expr))
+        close: (close)))))
+
+================================================================================
+Markup.2 - Nested emphasis
+================================================================================
+*bold /italic _underline_/* +strike *bold*+
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (bold
+        open: (open)
+        contents: (contents
+          (italic
+            open: (open)
+            contents: (contents
+              (underline
+                open: (open)
+                contents: (contents)
+                close: (close)))
+            close: (close)))
+        close: (close))
+      (strikethrough
+        open: (open)
+        contents: (contents
+          (bold
+            open: (open)
+            contents: (contents)
+            close: (close)))
+        close: (close)))))
+
+================================================================================
+Markup.3 - Literal spans
+================================================================================
+=code= ~verbatim~
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (code
+        open: (open)
+        contents: (contents
+          (expr))
+        close: (close))
+      (verbatim
+        open: (open)
+        contents: (contents
+          (expr))
+        close: (close)))))
+
+================================================================================
+Markup.4 - Code and verbatim are not nested
+================================================================================
+=code *not bold*= ~verbatim /not italic/~
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (code
+        open: (open)
+        contents: (contents
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr))
+        close: (close))
+      (verbatim
+        open: (open)
+        contents: (contents
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr))
+        close: (close)))))
+
+================================================================================
+Markup.5 - Unmatched delimiters stay text
+================================================================================
+*bold /italic
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (expr)
+      (expr)
+      (expr)
+      (expr))))
+
+================================================================================
+Markup.6 - Valid post-close character
+================================================================================
+*bold*[
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (bold
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (expr))))
+
+================================================================================
+Markup.7 - Invalid post-close character
+================================================================================
+*bold*]
 --------------------------------------------------------------------------------
 
 (document
@@ -1047,6 +1209,8 @@ List.11a  - No Checkbox markup
       (listitem
         bullet: (bullet)
         contents: (paragraph
+          (expr)
+          (expr)
           (expr)
           (expr)
           (expr))))))
@@ -2653,8 +2817,7 @@ Plan.16  - Link
     body: (body
       (paragraph
         (link
-          url: (expr)
-        )))))
+          url: (expr))))))
 
 ================================================================================
 Plan.17  - Tab
@@ -2706,7 +2869,6 @@ Dates.1  - In paragraph
           day: (day)
           time: (time))))))
 
-
 ================================================================================
 Dates.2  - In headline
 ================================================================================
@@ -2722,8 +2884,8 @@ Dates.2  - In headline
         (expr)
         (expr)
         (timestamp
-         date: (date)
-         day: (day))
+          date: (date)
+          day: (day))
         (expr)))))
 
 ================================================================================
@@ -2843,7 +3005,6 @@ Dates.6  - In property value
             time: (time))
           (expr))))))
 
-
 ================================================================================
 Link.1  - In paragraph
 ================================================================================
@@ -2874,7 +3035,6 @@ Link.1  - In paragraph
           url: (expr)
           desc: (expr))))))
 
-
 ================================================================================
 Link.2  - In headline
 ================================================================================
@@ -2890,11 +3050,11 @@ Link.2  - In headline
         (expr)
         (expr)
         (link
-         url: (expr))
+          url: (expr))
         (expr)
         (link_desc
-         url: (expr)
-         desc: (expr))
+          url: (expr)
+          desc: (expr))
         (expr)))))
 
 ================================================================================
@@ -3053,6 +3213,9 @@ Link.9  - Ignore unclosed link
 (document
   body: (body
     (paragraph
+      (expr)
+      (expr)
+      (expr)
       (expr))))
 
 ================================================================================
@@ -3101,6 +3264,9 @@ Link.13 - Ignore unclosed link with description
 (document
   body: (body
     (paragraph
+      (expr)
+      (expr)
+      (expr)
       (expr))))
 
 ================================================================================
@@ -3112,6 +3278,9 @@ Link.14 - Ignore unclosed link with spaces with description
 (document
   body: (body
     (paragraph
+      (expr)
+      (expr)
+      (expr)
       (expr)
       (expr))))
 
@@ -3142,6 +3311,8 @@ Math.2  - Brackets
       (inline_math_block
         (open)
         (contents
+          (expr)
+          (expr)
           (expr)
           (expr)
           (expr))
