@@ -42,13 +42,12 @@ const org_grammar = {
 
     [$._tag_expr_start, $.expr],
 
-    // _multiline_text  •  ':'  …
-    // Is the ':' continued multiline text or is it a drawer?
-    [$.paragraph],
-    [$.fndef],
-    // ':'  'str'  …
-    // Continue the conflict from above
-    [$.expr, $.drawer],
+     // _multiline_text  •  ':'  …
+     // Is the ':' continued multiline text or is it a drawer?
+     [$.paragraph],
+     // ':'  'str'  …
+     // Continue the conflict from above
+     [$.expr, $.drawer],
 
     // headline  'entry_token1'  ':'  •  '<'  …
     [$.entry, $.expr],
@@ -73,7 +72,7 @@ const org_grammar = {
         repeat1(seq(
           choice(
             seq($._multis, $._nl),
-            seq(optional(choice($.paragraph, $.fndef)), $._element),
+            seq(optional(choice($.fndef, $.paragraph)), $._element),
           ),
           repeat($._nl),
         )),
@@ -134,11 +133,11 @@ const org_grammar = {
       ),
     ),
 
-    // Can't have multiple in a row
+    // Paragraphs and directives can't have multiple in a row; fndefs can.
     _multis: $ => choice(
+      seq($.fndef, repeat($.fndef)),
       $.paragraph,
       $._directive_list,
-      $.fndef,
     ),
 
     _element: $ => choice(
@@ -242,15 +241,15 @@ const org_grammar = {
 
     paragraph: $ => seq(optional($._directive_list), $._multiline_text),
 
-    fndef: $ => seq(
+    fndef: $ => prec.dynamic(1, seq(
       optional($._directive_list),
       seq(
         alias(/\[fn:/i, '[fn:'),
         field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
         ']',
       ),
-      field('description', alias($._multiline_text, $.description))
-    ),
+      field('description', alias($._fndef_description, $.description))
+    )),
 
     _directive_list: $ => repeat1(field('directive', $.directive)),
     directive: $ => seq(
@@ -394,10 +393,33 @@ const org_grammar = {
     _eol: $ => choice('\n', '\r', $._eof),
 
     _expr_line: $ => repeat1($._markup),
+    _fndef_description: $ => prec.right(seq(
+      repeat1($._markup),
+      $._eol,
+      repeat(seq(
+        choice(
+          $._fndef_initial_expr,
+          $.inline_code_block,
+          $.inline_math_block,
+          $.display_math_block,
+          $.link,
+          $.link_desc,
+          $.timestamp,
+          $.citation,
+        ),
+        repeat($._markup),
+        $._eol
+      ))
+    )),
     _multiline_text: $ => repeat1(seq(
       repeat1($._markup),
       $._eol
     )),
+
+    _fndef_initial_expr: $ => seq(
+      expr('non-immediate', token, '['),
+      repeat(expr('immediate', token.immediate))
+    ),
 
     _markup: $ => choice(
       $.expr,
@@ -406,9 +428,16 @@ const org_grammar = {
       $.display_math_block,
       $.link,
       $.link_desc,
+      $.fnref,
       $.timestamp,
       $.citation,
     ),
+
+    fnref: $ => prec(-1, seq(
+      alias(/\[fn:/i, '[fn:'),
+      field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
+      ']',
+    )),
 
     citation: $ => choice(
       seq(

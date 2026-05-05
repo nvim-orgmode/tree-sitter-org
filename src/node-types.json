@@ -233,6 +233,10 @@
           "named": true
         },
         {
+          "type": "fnref",
+          "named": true
+        },
+        {
           "type": "inline_code_block",
           "named": true
         },
@@ -261,7 +265,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "citation",
@@ -273,6 +277,10 @@
         },
         {
           "type": "expr",
+          "named": true
+        },
+        {
+          "type": "fnref",
           "named": true
         },
         {
@@ -363,7 +371,6 @@
   {
     "type": "document",
     "named": true,
-    "root": true,
     "fields": {
       "body": {
         "multiple": false,
@@ -547,6 +554,22 @@
     }
   },
   {
+    "type": "fnref",
+    "named": true,
+    "fields": {
+      "label": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "formula",
     "named": true,
     "fields": {
@@ -564,6 +587,10 @@
           },
           {
             "type": "expr",
+            "named": true
+          },
+          {
+            "type": "fnref",
             "named": true
           },
           {
@@ -732,6 +759,10 @@
         },
         {
           "type": "expr",
+          "named": true
+        },
+        {
+          "type": "fnref",
           "named": true
         },
         {
@@ -995,6 +1026,10 @@
         },
         {
           "type": "expr",
+          "named": true
+        },
+        {
+          "type": "fnref",
           "named": true
         },
         {
@@ -1320,6 +1355,10 @@
         },
         {
           "type": "expr",
+          "named": true
+        },
+        {
+          "type": "fnref",
           "named": true
         },
         {

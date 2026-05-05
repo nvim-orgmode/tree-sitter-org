@@ -210,9 +210,30 @@ Footnote.3 - Precedence
     (fndef
       label: (expr)
       description: (description
+        (expr)))))
+
+================================================================================
+Footnote.4 - Consecutive definitions
+================================================================================
+[fn:reference1] Test
+[fn:reference3] Test
+[fn:referencea] test
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (fndef
+      label: (expr)
+      description: (description
         (expr)))
-    (drawer
-      name: (expr))))
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)))
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)))))
 
 ================================================================================
 Drawer.1 - Basic
@@ -310,7 +331,6 @@ Drawer.6b - Junk
     (fndef
       label: (expr)
       description: (description
-        (expr)
         (expr)))))
 
 ================================================================================
@@ -2653,8 +2673,7 @@ Plan.16  - Link
     body: (body
       (paragraph
         (link
-          url: (expr)
-        )))))
+          url: (expr))))))
 
 ================================================================================
 Plan.17  - Tab
@@ -2706,7 +2725,6 @@ Dates.1  - In paragraph
           day: (day)
           time: (time))))))
 
-
 ================================================================================
 Dates.2  - In headline
 ================================================================================
@@ -2722,8 +2740,8 @@ Dates.2  - In headline
         (expr)
         (expr)
         (timestamp
-         date: (date)
-         day: (day))
+          date: (date)
+          day: (day))
         (expr)))))
 
 ================================================================================
@@ -2843,7 +2861,6 @@ Dates.6  - In property value
             time: (time))
           (expr))))))
 
-
 ================================================================================
 Link.1  - In paragraph
 ================================================================================
@@ -2874,7 +2891,6 @@ Link.1  - In paragraph
           url: (expr)
           desc: (expr))))))
 
-
 ================================================================================
 Link.2  - In headline
 ================================================================================
@@ -2890,11 +2906,11 @@ Link.2  - In headline
         (expr)
         (expr)
         (link
-         url: (expr))
+          url: (expr))
         (expr)
         (link_desc
-         url: (expr)
-         desc: (expr))
+          url: (expr)
+          desc: (expr))
         (expr)))))
 
 ================================================================================
@@ -3011,6 +3027,85 @@ Link.6  - In property value
           (expr)
           (link
             url: (expr))
+          (expr))))))
+
+================================================================================
+FnRef.1  - In paragraph
+================================================================================
+* Footnotes
+  Paragraph with [fn:1] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (paragraph
+        (expr)
+        (expr)
+        (fnref
+          label: (expr))
+        (expr)))))
+
+================================================================================
+FnRef.2  - In headline
+================================================================================
+* Headline with [fn:1] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (fnref
+          label: (expr))
+        (expr)))))
+
+================================================================================
+FnRef.3  - In drawer
+================================================================================
+:notes:
+[fn:1] inside drawer
+:end:
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (drawer
+      name: (expr)
+      contents: (contents
+        (fnref
+          label: (expr))
+        (expr)
+        (expr)))))
+
+================================================================================
+FnRef.4  - In fndef description
+================================================================================
+* Footnotes
+[fn:1] Description with [fn:2] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (fndef
+        label: (expr)
+        description: (description
+          (expr)
+          (expr)
+          (fnref
+            label: (expr))
           (expr))))))
 
 ================================================================================
