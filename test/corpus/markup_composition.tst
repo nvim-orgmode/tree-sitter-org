@@ -104,3 +104,42 @@ Composition.5 - Dollars in three code spans do not pair as math
           (expr))
         close: (close))
       (expr))))
+
+================================================================================
+Composition.6 - dollars inside separate verbatim spans on one line stay literal
+================================================================================
+~sed -e "s/^\* Unreleased$/x/" '"$v"'~, then bump ~[ "$(date +%F)" ]~ done.
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (verbatim
+        open: (open)
+        contents: (contents
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr))
+        close: (close))
+      (expr)
+      (expr)
+      (expr)
+      (verbatim
+        open: (open)
+        contents: (contents
+          (expr)
+          (expr)
+          (expr)
+          (expr)
+          (expr))
+        close: (close))
+      (expr))))
