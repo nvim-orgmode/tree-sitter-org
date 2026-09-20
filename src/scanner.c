@@ -109,6 +109,9 @@ static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
 
+    // Index 0 of the indent, bullet and section stacks is a sentinel that
+    // deserialize pushes before reading the buffer, so those counts exclude
+    // it. The markup stack has no sentinel, so its count is the full length.
     size_t indent_count = MIN(scanner->indent_length_stack->len - 1, UINT8_MAX);
     size_t section_count = MIN(scanner->section_stack->len - 1, UINT8_MAX);
     size_t markup_count = MIN(scanner->markup_stack->len, UINT8_MAX);
@@ -139,7 +142,7 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
     buffer[i++] = section_count;
     buffer[i++] = markup_count;
 
-    int iter = 1;
+    size_t iter = 1;
     for (; iter <= indent_count; ++iter) {
         buffer[i++] = scanner->indent_length_stack->data[iter];
     }
