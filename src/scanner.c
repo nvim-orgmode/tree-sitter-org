@@ -469,7 +469,10 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
 
     // Org inline markup does not span lines, so stale unmatched delimiters from
-    // a previous line must not suppress valid markup on later lines.
+    // a previous line must not suppress valid markup on later lines. An entry
+    // goes stale when its closer is swallowed by a link or math token: the
+    // close is then never requested and the entry would stay on the stack
+    // forever.
     bool at_bol = lexer->get_column(lexer) == 0;
     if (at_bol) {
         VEC_CLEAR(scanner->markup_stack);
@@ -536,8 +539,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
 
     // - Col=0 star
-    if (indent_length == 0 && lexer->get_column(lexer) == 0 &&
-        lexer->lookahead == '*') {
+    if (at_bol && indent_length == 0 && lexer->lookahead == '*') {
         lexer->mark_end(lexer);
         int16_t stars = 1;
         advance(lexer);
@@ -602,7 +604,6 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if ((valid_symbols[LINKOPEN] || valid_symbols[FOOTNOTEOPEN] ||
          valid_symbols[FNDEFOPEN]) &&
         lexer->lookahead == '[') {
-        bool at_bol = lexer->get_column(lexer) == 0;
         advance(lexer);
         if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
             advance(lexer);
@@ -644,7 +645,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
             if (has_label && lexer->lookahead == ']') {
                 // Prefer FNDEFOPEN (fndef start) when at beginning of line
-                if (valid_symbols[FNDEFOPEN] && at_bol) {
+                if (valid_symbols[FNDEFOPEN] && at_bol && indent_length == 0) {
                     lexer->result_symbol = FNDEFOPEN;
                 } else if (valid_symbols[FOOTNOTEOPEN]) {
                     lexer->result_symbol = FOOTNOTEOPEN;
