@@ -280,25 +280,6 @@ static Markup delimiter_to_markup(int32_t c) {
     }
 }
 
-static int32_t markup_to_delimiter(Markup markup) {
-    switch (markup) {
-    case MARKUP_BOLD:
-        return '*';
-    case MARKUP_ITALIC:
-        return '/';
-    case MARKUP_UNDERLINE:
-        return '_';
-    case MARKUP_STRIKETHROUGH:
-        return '+';
-    case MARKUP_CODE:
-        return '~';
-    case MARKUP_VERBATIM:
-        return '=';
-    default:
-        return '\0';
-    }
-}
-
 static enum TokenType markup_open_token(Markup markup) {
     switch (markup) {
     case MARKUP_BOLD:
@@ -342,7 +323,7 @@ static enum TokenType markup_close_token(Markup markup) {
 //   pre:      valid_pre_char, computed in scan() before dispatch
 //   border:   is_markup_border_char, after the opener and before the
 //             closer
-//   body:     the lookahead walk in scan_markup_delimiter_from_consumed
+//   body:     the lookahead walk in scan_markup_open
 //   post:     is_markup_post_char, plus delimiter chaining as a
 //             deviation from Emacs
 //   newlines: fixed at 0, the walk stops at the newline and scan()
@@ -375,10 +356,77 @@ static bool is_literal_markup(Markup markup) {
     return markup == MARKUP_CODE || markup == MARKUP_VERBATIM;
 }
 
-static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer,
-                                                const bool *valid_symbols,
-                                                Markup markup,
-                                                bool valid_pre_char) {
+static bool is_line_end(int32_t c) {
+    return c == '\0' || c == '\n' || c == '\r';
+}
+
+// A delimiter closes when the char before it is a border char and the
+// char after it is a post char.
+static bool is_markup_closer(int32_t before, int32_t after) {
+    return is_markup_border_char(before) && is_markup_post_char(after);
+}
+
+// Precondition: the delimiter has been consumed, lookahead is the char
+// after it.
+static bool scan_markup_close(Scanner *scanner, TSLexer *lexer,
+                              enum TokenType close_token) {
+    if (!is_markup_post_char(lexer->lookahead))
+        return false;
+    VEC_POP(scanner->markup_stack);
+    lexer->result_symbol = close_token;
+    return true;
+}
+
+static bool may_open_markup(Markup markup, Markup active_markup,
+                            bool valid_pre_char) {
+    if (active_markup == markup)
+        return false;
+    if (is_literal_markup(active_markup))
+        return false;
+    // Emacs allows whitespace, one of - ( ' " {, or BOL before an opening
+    // delimiter (org-element--parse-generic-emphasis). We only check
+    // whitespace/BOL: the scanner has no lookbehind into chars already
+    // consumed by the plain expr/str lexing, so a preceding '(' can't be
+    // told apart from an ordinary letter here.
+    return valid_pre_char;
+}
+
+// Precondition: the delimiter has been consumed, lookahead is the char
+// after it. Walks the rest of the line for a matching closer without
+// moving the token end, so the token stays the single delimiter char.
+static bool scan_markup_open(Scanner *scanner, TSLexer *lexer, Markup markup,
+                             int32_t delimiter, enum TokenType open_token) {
+    if (!is_markup_border_char(lexer->lookahead))
+        return false;
+    if (lexer->lookahead == delimiter)
+        return false;
+
+    int32_t last_char = '\0';
+    while (!is_line_end(lexer->lookahead)) {
+        if (lexer->lookahead == delimiter) {
+            advance(lexer);
+            if (is_markup_closer(last_char, lexer->lookahead)) {
+                VEC_PUSH(scanner->markup_stack, markup);
+                lexer->result_symbol = open_token;
+                return true;
+            }
+            last_char = delimiter;
+            continue;
+        }
+
+        last_char = lexer->lookahead;
+        advance(lexer);
+    }
+
+    return false;
+}
+
+// Precondition: the delimiter char has been consumed and marked as token
+// end, lookahead is the char after it. Decides whether it closes the
+// active markup, opens a new one, or is plain text.
+static bool scan_markup_open_or_close(Scanner *scanner, TSLexer *lexer,
+                                      const bool *valid_symbols, Markup markup,
+                                      int32_t delimiter, bool valid_pre_char) {
     enum TokenType open_token = markup_open_token(markup);
     enum TokenType close_token = markup_close_token(markup);
     bool can_open = valid_symbols[open_token];
@@ -391,67 +439,27 @@ static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer
         scanner->markup_stack->len > 0 ? VEC_BACK(scanner->markup_stack)
                                        : MARKUP_NONE;
 
-    if (can_close && active_markup == markup) {
-        if (is_markup_post_char(lexer->lookahead)) {
-            VEC_POP(scanner->markup_stack);
-            lexer->result_symbol = close_token;
-            return true;
-        }
-        return false;
-    }
+    if (can_close && active_markup == markup)
+        return scan_markup_close(scanner, lexer, close_token);
 
-    if (!can_open || active_markup == markup)
-        return false;
-    if (is_literal_markup(active_markup))
-        return false;
-    // Emacs allows whitespace, one of - ( ' " {, or BOL before an opening
-    // delimiter (org-element--parse-generic-emphasis). We only check
-    // whitespace/BOL: the scanner has no lookbehind into chars already
-    // consumed by the plain expr/str lexing, so a preceding '(' can't be
-    // told apart from an ordinary letter here.
-    if (!valid_pre_char)
+    if (!can_open || !may_open_markup(markup, active_markup, valid_pre_char))
         return false;
 
-    int32_t delimiter = markup_to_delimiter(markup);
-    if (!is_markup_border_char(lexer->lookahead))
-        return false;
-    if (lexer->lookahead == delimiter)
-        return false;
-
-    int32_t previous = '\0';
-    while (lexer->lookahead != '\0' && lexer->lookahead != '\n' &&
-           lexer->lookahead != '\r') {
-        if (lexer->lookahead == delimiter) {
-            int32_t before_delimiter = previous;
-            advance(lexer);
-            if (is_markup_border_char(before_delimiter) &&
-                is_markup_post_char(lexer->lookahead)) {
-                VEC_PUSH(scanner->markup_stack, markup);
-                lexer->result_symbol = open_token;
-                return true;
-            }
-            previous = delimiter;
-            continue;
-        }
-
-        previous = lexer->lookahead;
-        advance(lexer);
-    }
-
-    return false;
+    return scan_markup_open(scanner, lexer, markup, delimiter, open_token);
 }
 
 static bool scan_markup_delimiter(Scanner *scanner, TSLexer *lexer,
                                   const bool *valid_symbols,
                                   bool valid_pre_char) {
-    Markup markup = delimiter_to_markup(lexer->lookahead);
+    int32_t delimiter = lexer->lookahead;
+    Markup markup = delimiter_to_markup(delimiter);
     if (markup == MARKUP_NONE)
         return false;
 
     advance(lexer);
     lexer->mark_end(lexer);
-    return scan_markup_delimiter_from_consumed(scanner, lexer, valid_symbols,
-                                               markup, valid_pre_char);
+    return scan_markup_open_or_close(scanner, lexer, valid_symbols, markup,
+                                     delimiter, valid_pre_char);
 }
 
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
@@ -555,9 +563,9 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
         if (stars == 1) {
             lexer->mark_end(lexer);
-            if (scan_markup_delimiter_from_consumed(
-                    scanner, lexer, valid_symbols, MARKUP_BOLD,
-                    /* valid_pre_char: */ true)) {
+            if (scan_markup_open_or_close(scanner, lexer, valid_symbols,
+                                          MARKUP_BOLD, '*',
+                                          /* valid_pre_char: */ true)) {
                 return true;
             }
         }
@@ -585,7 +593,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
 
     // Emacs border-pre: opening delimiter must be preceded by whitespace or
-    // be at the start of the line (see scan_markup_delimiter_from_consumed).
+    // be at the start of the line (see may_open_markup).
     if (scan_markup_delimiter(scanner, lexer, valid_symbols,
                               indent_length > 0 || at_bol)) {
         return true;
