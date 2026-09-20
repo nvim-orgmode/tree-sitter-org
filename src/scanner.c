@@ -271,9 +271,9 @@ static Markup delimiter_to_markup(int32_t c) {
     case '+':
         return MARKUP_STRIKETHROUGH;
     case '=':
-        return MARKUP_CODE;
-    case '~':
         return MARKUP_VERBATIM;
+    case '~':
+        return MARKUP_CODE;
     default:
         return MARKUP_NONE;
     }
@@ -290,9 +290,9 @@ static int32_t markup_to_delimiter(Markup markup) {
     case MARKUP_STRIKETHROUGH:
         return '+';
     case MARKUP_CODE:
-        return '=';
-    case MARKUP_VERBATIM:
         return '~';
+    case MARKUP_VERBATIM:
+        return '=';
     default:
         return '\0';
     }

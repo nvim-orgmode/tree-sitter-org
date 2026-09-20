@@ -639,7 +639,7 @@ This is src_ test
 ================================================================================
 Markup.1 - Simple
 ================================================================================
-*bold* /italic/ _underline_ +strike+ =code= ~verbatim~
+*bold* /italic/ _underline_ +strike+ =verbatim= ~code~
 --------------------------------------------------------------------------------
 
 (document
@@ -661,12 +661,12 @@ Markup.1 - Simple
         open: (open)
         contents: (contents)
         close: (close))
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr))
         close: (close))
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr))
@@ -705,33 +705,33 @@ Markup.2 - Nested emphasis
 ================================================================================
 Markup.3 - Literal spans
 ================================================================================
-=code= ~verbatim~
+=verbatim= ~code~
 --------------------------------------------------------------------------------
 
 (document
   body: (body
     (paragraph
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr))
         close: (close))
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr))
         close: (close)))))
 
 ================================================================================
-Markup.4 - Code and verbatim are not nested
+Markup.4 - Verbatim and code are not nested
 ================================================================================
-=code *not bold*= ~verbatim /not italic/~
+=verbatim *not bold*= ~code /not italic/~
 --------------------------------------------------------------------------------
 
 (document
   body: (body
     (paragraph
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr)
@@ -740,7 +740,7 @@ Markup.4 - Code and verbatim are not nested
           (expr)
           (expr))
         close: (close))
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr)

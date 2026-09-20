@@ -18,7 +18,7 @@ Composition.1 - Inline math inside bold
         close: (close)))))
 
 ================================================================================
-Composition.2 - Dollars inside code stay literal
+Composition.2 - Dollars inside verbatim stay literal
 ================================================================================
 =$x= text =$y=
 --------------------------------------------------------------------------------
@@ -26,20 +26,20 @@ Composition.2 - Dollars inside code stay literal
 (document
   body: (body
     (paragraph
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr))
         close: (close))
       (expr)
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr))
         close: (close)))))
 
 ================================================================================
-Composition.3 - LaTeX command inside verbatim stays literal
+Composition.3 - LaTeX command inside code stays literal
 ================================================================================
 ~\sqrt{x}~
 --------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ Composition.3 - LaTeX command inside verbatim stays literal
 (document
   body: (body
     (paragraph
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr))
@@ -70,7 +70,7 @@ Composition.4 - LaTeX command inside bold is recognized
         close: (close)))))
 
 ================================================================================
-Composition.5 - Dollars in three code spans do not pair as math
+Composition.5 - Dollars in three verbatim spans do not pair as math
 ================================================================================
 =$TMUX_FZF_ORDER=, asks =fzf=, runs =scripts/${item}.sh= ok.
 --------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ Composition.5 - Dollars in three code spans do not pair as math
 (document
   body: (body
     (paragraph
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr)
@@ -89,14 +89,14 @@ Composition.5 - Dollars in three code spans do not pair as math
         close: (close))
       (expr)
       (expr)
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr))
         close: (close))
       (expr)
       (expr)
-      (code
+      (verbatim
         open: (open)
         contents: (contents
           (expr)
@@ -106,7 +106,7 @@ Composition.5 - Dollars in three code spans do not pair as math
       (expr))))
 
 ================================================================================
-Composition.6 - dollars inside separate verbatim spans on one line stay literal
+Composition.6 - dollars inside separate code spans on one line stay literal
 ================================================================================
 ~sed -e "s/^\* Unreleased$/x/" '"$v"'~, then bump ~[ "$(date +%F)" ]~ done.
 --------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ Composition.6 - dollars inside separate verbatim spans on one line stay literal
 (document
   body: (body
     (paragraph
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr)
@@ -133,7 +133,7 @@ Composition.6 - dollars inside separate verbatim spans on one line stay literal
       (expr)
       (expr)
       (expr)
-      (verbatim
+      (code
         open: (open)
         contents: (contents
           (expr)
