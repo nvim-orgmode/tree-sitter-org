@@ -30,7 +30,7 @@ text *bold* more
       (expr))))
 
 ================================================================================
-DelimiterRules.3 - Post-char [ accepted (deliberate Emacs divergence)
+DelimiterRules.3 - Post-char [ accepts markup
 ================================================================================
 *bold*[next
 --------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ DelimiterRules.4 - Post-char dot accepts markup
       (expr))))
 
 ================================================================================
-DelimiterRules.5 - Body-border comma accepted (deliberate Emacs divergence)
+DelimiterRules.5 - Body-border comma accepts markup
 ================================================================================
 text *foo,* end
 --------------------------------------------------------------------------------
