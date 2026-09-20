@@ -82,6 +82,21 @@ DelimiterRules.4 - Post-char dot accepts markup
       (expr))))
 
 ================================================================================
+DelimiterRules.4b - Post-char tab accepts markup
+================================================================================
+*bold*	x
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (paragraph
+      (bold
+        open: (open)
+        contents: (contents)
+        close: (close))
+      (expr))))
+
+================================================================================
 DelimiterRules.5 - Body-border comma accepts markup
 ================================================================================
 text *foo,* end
