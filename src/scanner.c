@@ -337,8 +337,18 @@ static enum TokenType markup_close_token(Markup markup) {
     }
 }
 
-static bool is_markup_content_char(int32_t c) {
-    return c != '\0' && c != '\n' && c != '\r' && !iswspace(c);
+// Emacs describes emphasis with the five fields of
+// org-emphasis-regexp-components. Their places in this scanner:
+//   pre:      valid_pre_char, computed in scan() before dispatch
+//   border:   is_markup_border_char, after the opener and before the
+//             closer
+//   body:     the lookahead walk in scan_markup_delimiter_from_consumed
+//   post:     is_markup_post_char, plus delimiter chaining as a
+//             deviation from Emacs
+//   newlines: fixed at 0, the walk stops at the newline and scan()
+//             clears the markup stack at BOL
+static bool is_markup_border_char(int32_t c) {
+    return c != '\0' && !iswspace(c);
 }
 
 static bool is_markup_delimiter_char(int32_t c) {
@@ -351,7 +361,7 @@ static bool is_markup_delimiter_char(int32_t c) {
 // truncated when converted to char.
 static const char *const MARKUP_POST_PUNCTUATION = "-.,:!?;'\")}\\[";
 
-static bool is_valid_post_marker_char(int32_t c) {
+static bool is_markup_post_char(int32_t c) {
     if (c == '\0' || iswspace(c))
         return true;
     if (c < 128 && strchr(MARKUP_POST_PUNCTUATION, c) != NULL)
@@ -382,7 +392,7 @@ static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer
                                        : MARKUP_NONE;
 
     if (can_close && active_markup == markup) {
-        if (is_valid_post_marker_char(lexer->lookahead)) {
+        if (is_markup_post_char(lexer->lookahead)) {
             VEC_POP(scanner->markup_stack);
             lexer->result_symbol = close_token;
             return true;
@@ -403,7 +413,7 @@ static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer
         return false;
 
     int32_t delimiter = markup_to_delimiter(markup);
-    if (!is_markup_content_char(lexer->lookahead))
+    if (!is_markup_border_char(lexer->lookahead))
         return false;
     if (lexer->lookahead == delimiter)
         return false;
@@ -414,8 +424,8 @@ static bool scan_markup_delimiter_from_consumed(Scanner *scanner, TSLexer *lexer
         if (lexer->lookahead == delimiter) {
             int32_t before_delimiter = previous;
             advance(lexer);
-            if (is_markup_content_char(before_delimiter) &&
-                is_valid_post_marker_char(lexer->lookahead)) {
+            if (is_markup_border_char(before_delimiter) &&
+                is_markup_post_char(lexer->lookahead)) {
                 VEC_PUSH(scanner->markup_stack, markup);
                 lexer->result_symbol = open_token;
                 return true;
