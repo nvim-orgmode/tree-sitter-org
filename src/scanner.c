@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <tree_sitter/parser.h>
 #include <wctype.h>
 
@@ -344,11 +345,20 @@ static bool is_markup_delimiter_char(int32_t c) {
     return delimiter_to_markup(c) != MARKUP_NONE;
 }
 
+// Emacs post set (org-emphasis-regexp-components): - \t.,:!?;'")}\\[
+// or end of line. Space and tab are covered by iswspace. The rest is
+// ASCII, so the strchr lookup is guarded against values that would be
+// truncated when converted to char.
+static const char *const MARKUP_POST_PUNCTUATION = "-.,:!?;'\")}\\[";
+
 static bool is_valid_post_marker_char(int32_t c) {
-    return c == '\0' || c == '\n' || c == '\r' || c == ' ' || c == ')' ||
-           c == '-' || c == '}' || c == '"' || c == '\'' || c == ':' ||
-           c == ';' || c == '!' || c == '\\' || c == '[' || c == ',' ||
-           c == '.' || c == '?' || is_markup_delimiter_char(c);
+    if (c == '\0' || iswspace(c))
+        return true;
+    if (c < 128 && strchr(MARKUP_POST_PUNCTUATION, c) != NULL)
+        return true;
+    // Delimiter chaining (*bold*/italic/) is not in the Emacs post set.
+    // Accepted here as a deliberate deviation.
+    return is_markup_delimiter_char(c);
 }
 
 static bool is_literal_markup(Markup markup) {
