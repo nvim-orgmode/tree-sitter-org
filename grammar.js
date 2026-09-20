@@ -545,6 +545,8 @@ const org_grammar = {
     ),
 
     expr: $ => choice(
+      // Catches a lone markup delimiter the scanner rejected as open or
+      // close, so it ends up as plain text instead of a parse error.
       token(prec(-1, /[*\/_+=~]/)),
       seq(
         expr('non-immediate', token, markupDelimiters),
@@ -563,6 +565,9 @@ const org_grammar = {
 function expr(pr, tfunc, skip = '', extra = '') {
   skip = skip.split("")
   extra = extra.split("")
+  // Markup delimiters passed as skip stay out of the internal lexer. The
+  // external scanner decides whether a delimiter opens, closes or is text;
+  // once the lexer has consumed it as a sym token the scanner is never asked.
   const excluded = skip.length === 0 ? '' : escapeForRegexCharClass(skip.join(''))
   return choice(
     ...asciiSymbols.filter(c => !skip.includes(c)).map(c => tfunc(prec(pr, c))),
