@@ -462,6 +462,86 @@ static bool scan_markup_delimiter(Scanner *scanner, TSLexer *lexer,
                                      delimiter, valid_pre_char);
 }
 
+// Precondition: the first [ is consumed. Looks for the second [ and a
+// closing ]] with content in between, on the same line.
+static bool scan_link_open(TSLexer *lexer) {
+    if (lexer->lookahead != '[')
+        return false;
+    advance(lexer);
+    lexer->mark_end(lexer);
+    bool has_content = false;
+    while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
+        int32_t prev_lookahead = lexer->lookahead;
+        advance(lexer);
+        if (prev_lookahead == ']' && lexer->lookahead == ']') {
+            advance(lexer);
+            if (!has_content) {
+                return false;
+            }
+            lexer->result_symbol = LINKOPEN;
+            return true;
+        }
+        has_content = true;
+    }
+    return false;
+}
+
+// Precondition: the [ is consumed. Looks for fn: and a non-empty label
+// closed by ]. A definition is preferred over a reference at column zero.
+static bool scan_footnote_open(TSLexer *lexer, const bool *valid_symbols,
+                               bool at_col0) {
+    if (towlower(lexer->lookahead) != 'f')
+        return false;
+    advance(lexer);
+    if (towlower(lexer->lookahead) != 'n')
+        return false;
+    advance(lexer);
+    if (lexer->lookahead != ':')
+        return false;
+    advance(lexer);
+    lexer->mark_end(lexer);
+
+    bool has_label = false;
+    while (lexer->lookahead != '\0' && !iswspace(lexer->lookahead) &&
+           lexer->lookahead != ']') {
+        has_label = true;
+        advance(lexer);
+    }
+
+    if (!has_label || lexer->lookahead != ']')
+        return false;
+
+    if (valid_symbols[FNDEFOPEN] && at_col0) {
+        lexer->result_symbol = FNDEFOPEN;
+    } else if (valid_symbols[FOOTNOTEOPEN]) {
+        lexer->result_symbol = FOOTNOTEOPEN;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// Consumes the [ and dispatches on the next character: a second [ starts
+// a link, f starts a footnote, anything else is plain text.
+static bool scan_bracket_open(TSLexer *lexer, const bool *valid_symbols,
+                              bool at_col0) {
+    if (lexer->lookahead != '[')
+        return false;
+    if (!valid_symbols[LINKOPEN] && !valid_symbols[FOOTNOTEOPEN] &&
+        !valid_symbols[FNDEFOPEN])
+        return false;
+
+    advance(lexer);
+    if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
+        return scan_link_open(lexer);
+    }
+    if ((valid_symbols[FOOTNOTEOPEN] || valid_symbols[FNDEFOPEN]) &&
+        towlower(lexer->lookahead) == 'f') {
+        return scan_footnote_open(lexer, valid_symbols, at_col0);
+    }
+    return false;
+}
+
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     // Error recovery
     if (valid_symbols[ERROR_SENTINEL]) {
@@ -601,60 +681,9 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if ((valid_symbols[LINKOPEN] || valid_symbols[FOOTNOTEOPEN] ||
-         valid_symbols[FNDEFOPEN]) &&
-        lexer->lookahead == '[') {
-        advance(lexer);
-        if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
-            advance(lexer);
-            lexer->mark_end(lexer);
-            bool has_content = false;
-            while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
-                int32_t prev_lookahead = lexer->lookahead;
-                advance(lexer);
-                if (prev_lookahead == ']' && lexer->lookahead == ']') {
-                    advance(lexer);
-                    if (!has_content) {
-                        return false;
-                    }
-                    lexer->result_symbol = LINKOPEN;
-                    return true;
-                }
-                has_content = true;
-            }
-        }
-
-        if ((valid_symbols[FOOTNOTEOPEN] || valid_symbols[FNDEFOPEN]) &&
-            towlower(lexer->lookahead) == 'f') {
-            advance(lexer);
-            if (towlower(lexer->lookahead) != 'n')
-                return false;
-            advance(lexer);
-            if (lexer->lookahead != ':')
-                return false;
-            advance(lexer);
-            lexer->mark_end(lexer);
-
-            bool has_label = false;
-            while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
-                   lexer->lookahead != '\0' && !iswspace(lexer->lookahead) &&
-                   lexer->lookahead != ']') {
-                has_label = true;
-                advance(lexer);
-            }
-
-            if (has_label && lexer->lookahead == ']') {
-                // Prefer FNDEFOPEN (fndef start) when at beginning of line
-                if (valid_symbols[FNDEFOPEN] && at_bol && indent_length == 0) {
-                    lexer->result_symbol = FNDEFOPEN;
-                } else if (valid_symbols[FOOTNOTEOPEN]) {
-                    lexer->result_symbol = FOOTNOTEOPEN;
-                } else {
-                    return false;
-                }
-                return true;
-            }
-        }
+    if (scan_bracket_open(lexer, valid_symbols,
+                          /* at_col0: */ at_bol && indent_length == 0)) {
+        return true;
     }
 
     // $ LaTeX math delimiters
