@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <tree_sitter/parser.h>
 #include <wctype.h>
@@ -79,6 +80,8 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
+static inline char to_char(int16_t val) { return (char) (val < CHAR_MIN || val > CHAR_MAX ? CHAR_MAX : val); }
+
 static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
 
@@ -91,21 +94,21 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
     for (; iter < scanner->indent_length_stack->len &&
            i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
          ++iter) {
-        buffer[i++] = scanner->indent_length_stack->data[iter];
+        buffer[i++] = to_char(scanner->indent_length_stack->data[iter]);
     }
 
     iter = 1;
     for (; iter < scanner->bullet_stack->len &&
            i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
          ++iter) {
-        buffer[i++] = scanner->bullet_stack->data[iter];
+        buffer[i++] = to_char(scanner->bullet_stack->data[iter]);
     }
 
     iter = 1;
     for (; iter < scanner->section_stack->len &&
            i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
          ++iter) {
-        buffer[i++] = scanner->section_stack->data[iter];
+        buffer[i++] = to_char(scanner->section_stack->data[iter]);
     }
 
     buffer[i++] = scanner->in_dollar_math;
