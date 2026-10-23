@@ -344,6 +344,24 @@ Footnote.9 - Markup at the start of a continuation line
         (expr)))))
 
 ================================================================================
+Footnote.10 - Plain text and symbols at the start of a continuation line
+================================================================================
+[fn:a] first
+second word
+(third) word
+-fourth
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)
+        (expr)
+        (expr)))))
+
+================================================================================
 Drawer.1 - Basic
 ================================================================================
 :name:
