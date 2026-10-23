@@ -450,8 +450,15 @@ const org_grammar = {
       repeat(seq(
         choice(
           $._fndef_initial_expr,
+          $.bold,
+          $.italic,
+          $.underline,
+          $.strikethrough,
+          $.code,
+          $.verbatim,
           $.inline_code_block,
           $.inline_math_block,
+          $.inline_latex,
           $.display_math_block,
           $.link,
           $.link_desc,

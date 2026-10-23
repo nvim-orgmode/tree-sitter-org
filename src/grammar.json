@@ -2822,11 +2822,39 @@
                     },
                     {
                       "type": "SYMBOL",
+                      "name": "bold"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "italic"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "underline"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "strikethrough"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "code"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "verbatim"
+                    },
+                    {
+                      "type": "SYMBOL",
                       "name": "inline_code_block"
                     },
                     {
                       "type": "SYMBOL",
                       "name": "inline_math_block"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "inline_latex"
                     },
                     {
                       "type": "SYMBOL",

@@ -314,6 +314,36 @@ Footnote.8 - Consecutive fndefs without blank line
         (expr)))))
 
 ================================================================================
+Footnote.9 - Markup at the start of a continuation line
+================================================================================
+[fn:a] first
+/italic/ second
+=verbatim= third
+\alpha fourth
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)
+        (italic
+          open: (open)
+          contents: (contents)
+          close: (close))
+        (expr)
+        (verbatim
+          open: (open)
+          contents: (contents
+            (expr))
+          close: (close))
+        (expr)
+        (inline_latex
+          command: (command))
+        (expr)))))
+
+================================================================================
 Drawer.1 - Basic
 ================================================================================
 :name:
