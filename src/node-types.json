@@ -313,7 +313,7 @@
           "named": true
         },
         {
-          "type": "footnote_reference",
+          "type": "fnref",
           "named": true
         },
         {
@@ -373,7 +373,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "bold",
@@ -396,7 +396,7 @@
           "named": true
         },
         {
-          "type": "footnote_reference",
+          "type": "fnref",
           "named": true
         },
         {
@@ -507,6 +507,7 @@
   {
     "type": "document",
     "named": true,
+    "root": true,
     "fields": {
       "body": {
         "multiple": false,
@@ -690,7 +691,7 @@
     }
   },
   {
-    "type": "footnote_reference",
+    "type": "fnref",
     "named": true,
     "fields": {
       "label": {
@@ -734,7 +735,7 @@
             "named": true
           },
           {
-            "type": "footnote_reference",
+            "type": "fnref",
             "named": true
           },
           {
@@ -1006,7 +1007,7 @@
           "named": true
         },
         {
-          "type": "footnote_reference",
+          "type": "fnref",
           "named": true
         },
         {
@@ -1373,7 +1374,7 @@
           "named": true
         },
         {
-          "type": "footnote_reference",
+          "type": "fnref",
           "named": true
         },
         {
@@ -1802,7 +1803,7 @@
           "named": true
         },
         {
-          "type": "footnote_reference",
+          "type": "fnref",
           "named": true
         },
         {

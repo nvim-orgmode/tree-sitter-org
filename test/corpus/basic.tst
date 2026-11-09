@@ -210,9 +210,30 @@ Footnote.3 - Precedence
     (fndef
       label: (expr)
       description: (description
+        (expr)))))
+
+================================================================================
+Footnote.4 - Consecutive definitions
+================================================================================
+[fn:reference1] Test
+[fn:reference3] Test
+[fn:referencea] test
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (fndef
+      label: (expr)
+      description: (description
         (expr)))
-    (drawer
-      name: (expr))))
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)))
+    (fndef
+      label: (expr)
+      description: (description
+        (expr)))))
 
 ================================================================================
 Footnote.4 - Inline reference in paragraph
@@ -224,7 +245,7 @@ a [fn:note] b
   body: (body
     (paragraph
       (expr)
-      (footnote_reference
+      (fnref
         label: (expr))
       (expr))))
 
@@ -241,7 +262,7 @@ Footnote.5 - Inline reference in drawer
     (drawer
       name: (expr)
       contents: (contents
-        (footnote_reference
+        (fnref
           label: (expr))))))
 
 ================================================================================
@@ -256,7 +277,7 @@ Footnote.6 - Inline reference in headline
       stars: (stars)
       item: (item
         (expr)
-        (footnote_reference
+        (fnref
           label: (expr))
         (expr)))))
 
@@ -388,7 +409,6 @@ Drawer.6b - Junk
     (fndef
       label: (expr)
       description: (description
-        (expr)
         (expr)))))
 
 ================================================================================
@@ -3296,6 +3316,85 @@ Link.6  - In property value
           (expr)
           (link
             url: (expr))
+          (expr))))))
+
+================================================================================
+FnRef.1  - In paragraph
+================================================================================
+* Footnotes
+  Paragraph with [fn:1] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (paragraph
+        (expr)
+        (expr)
+        (fnref
+          label: (expr))
+        (expr)))))
+
+================================================================================
+FnRef.2  - In headline
+================================================================================
+* Headline with [fn:1] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)
+        (expr)
+        (fnref
+          label: (expr))
+        (expr)))))
+
+================================================================================
+FnRef.3  - In drawer
+================================================================================
+:notes:
+[fn:1] inside drawer
+:end:
+--------------------------------------------------------------------------------
+
+(document
+  body: (body
+    (drawer
+      name: (expr)
+      contents: (contents
+        (fnref
+          label: (expr))
+        (expr)
+        (expr)))))
+
+================================================================================
+FnRef.4  - In fndef description
+================================================================================
+* Footnotes
+[fn:1] Description with [fn:2] reference
+--------------------------------------------------------------------------------
+
+(document
+  subsection: (section
+    headline: (headline
+      stars: (stars)
+      item: (item
+        (expr)))
+    body: (body
+      (fndef
+        label: (expr)
+        description: (description
+          (expr)
+          (expr)
+          (fnref
+            label: (expr))
           (expr))))))
 
 ================================================================================

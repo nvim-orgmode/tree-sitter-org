@@ -56,13 +56,13 @@ const org_grammar = {
     [$.item],
 
     [$._tag_expr_start, $.expr],
-    // _multiline_text  •  ':'  …
-    // Is the ':' continued multiline text or is it a drawer?
-    [$.paragraph],
-    [$.fndef],
-    // ':'  'str'  …
-    // Continue the conflict from above
-    [$.expr, $.drawer],
+
+     // _multiline_text  •  ':'  …
+     // Is the ':' continued multiline text or is it a drawer?
+     [$.paragraph],
+     // ':'  'str'  …
+     // Continue the conflict from above
+     [$.expr, $.drawer],
 
     // headline  'entry_token1'  ':'  •  '<'  …
     [$.entry, $.expr],
@@ -178,7 +178,7 @@ const org_grammar = {
       ),
     ),
 
-    // Can't have multiple in a row (fnDefs are an exception and can be consecutive)
+    // Paragraphs and directives can't have multiple in a row; fndefs can.
     _multis: $ => choice(
       seq($.fndef, repeat($.fndef)),
       $.paragraph,
@@ -293,10 +293,10 @@ const org_grammar = {
         field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
         token.immediate(']'),
       ),
-      field('description', alias($._multiline_text, $.description))
+      field('description', alias($._fndef_description, $.description))
     )),
 
-    footnote_reference: $ => prec(-1, seq(
+    fnref: $ => prec(-1, seq(
       alias($._footnote_open, '[fn:'),
       field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
       token.immediate(']'),
@@ -444,10 +444,33 @@ const org_grammar = {
     _eol: $ => choice('\n', '\r', $._eof),
 
     _expr_line: $ => repeat1($._markup),
+    _fndef_description: $ => prec.right(seq(
+      repeat1($._markup),
+      $._eol,
+      repeat(seq(
+        choice(
+          $._fndef_initial_expr,
+          $.inline_code_block,
+          $.inline_math_block,
+          $.display_math_block,
+          $.link,
+          $.link_desc,
+          $.timestamp,
+          $.citation,
+        ),
+        repeat($._markup),
+        $._eol
+      ))
+    )),
     _multiline_text: $ => repeat1(seq(
       repeat1($._markup),
       $._eol
     )),
+
+    _fndef_initial_expr: $ => seq(
+      expr('non-immediate', token, '['),
+      repeat(expr('immediate', token.immediate))
+    ),
 
     _markup: $ => choice(
       $.bold,
@@ -463,7 +486,7 @@ const org_grammar = {
       $.link,
       $.link_desc,
       $.timestamp,
-      $.footnote_reference,
+      $.fnref,
       $.citation,
       $.expr,
     ),
@@ -582,7 +605,7 @@ function expr(pr, tfunc, skip = '', extra = '') {
 }
 
 function escapeForRegexCharClass(text) {
-  return text.replace(/[\\\-\]\^]/g, '\\$&')
+  return text.replace(/[\\\-\[\]\^]/g, '\\$&')
 }
 
 function nestedExpr() {
@@ -605,7 +628,7 @@ function nestedMarkup($) {
     $.link,
     $.link_desc,
     $.timestamp,
-    $.footnote_reference,
+    $.fnref,
     $.citation,
   )
 }
