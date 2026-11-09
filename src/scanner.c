@@ -1,8 +1,10 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <tree_sitter/parser.h>
 #include <wctype.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define VEC_RESIZE(vec, _cap)                                                  \
@@ -44,10 +46,34 @@ enum TokenType {
     SECTIONEND,
     ENDOFFILE,
     LINKOPEN,
+    FOOTNOTEOPEN,
+    FNDEFOPEN,
     LATEX_MATH_SINGLE_DOLLAR,
     TEXT_DOLLAR,
+    BOLD_OPEN,
+    BOLD_CLOSE,
+    ITALIC_OPEN,
+    ITALIC_CLOSE,
+    UNDERLINE_OPEN,
+    UNDERLINE_CLOSE,
+    STRIKETHROUGH_OPEN,
+    STRIKETHROUGH_CLOSE,
+    CODE_OPEN,
+    CODE_CLOSE,
+    VERBATIM_OPEN,
+    VERBATIM_CLOSE,
     ERROR_SENTINEL
 };
+
+typedef enum {
+    MARKUP_NONE,
+    MARKUP_BOLD,
+    MARKUP_ITALIC,
+    MARKUP_UNDERLINE,
+    MARKUP_STRIKETHROUGH,
+    MARKUP_CODE,
+    MARKUP_VERBATIM,
+} Markup;
 
 typedef enum {
     NOTABULLET,
@@ -72,6 +98,7 @@ typedef struct {
     stack *indent_length_stack;
     stack *bullet_stack;
     stack *section_stack;
+    stack *markup_stack;
     bool in_dollar_math;
 } Scanner;
 
@@ -82,30 +109,57 @@ static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 static unsigned serialize(Scanner *scanner, char *buffer) {
     size_t i = 0;
 
-    size_t indent_count = scanner->indent_length_stack->len - 1;
-    if (indent_count > UINT8_MAX)
-        indent_count = UINT8_MAX;
-    buffer[i++] = indent_count;
+    // Index 0 of the indent, bullet and section stacks is a sentinel that
+    // deserialize pushes before reading the buffer, so those counts exclude
+    // it. The markup stack has no sentinel, so its count is the full length.
+    size_t indent_count = MIN(scanner->indent_length_stack->len - 1, UINT8_MAX);
+    size_t section_count = MIN(scanner->section_stack->len - 1, UINT8_MAX);
+    size_t markup_count = MIN(scanner->markup_stack->len, UINT8_MAX);
 
-    int iter = 1;
-    for (; iter < scanner->indent_length_stack->len &&
-           i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
-         ++iter) {
+    // The serialized layout is:
+    // [indent_count][section_count][markup_count]
+    // [indent entries...][bullet entries...][section entries...]
+    // [markup entries...][in_dollar_math]
+    size_t serialized_size =
+        3 + indent_count * 2 + section_count + markup_count + 1;
+
+    while (serialized_size > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+        if (markup_count > 0) {
+            markup_count--;
+        } else if (section_count > 0) {
+            section_count--;
+        } else if (indent_count > 0) {
+            indent_count--;
+        } else {
+            break;
+        }
+
+        serialized_size =
+            3 + indent_count * 2 + section_count + markup_count + 1;
+    }
+
+    buffer[i++] = indent_count;
+    buffer[i++] = section_count;
+    buffer[i++] = markup_count;
+
+    size_t iter = 1;
+    for (; iter <= indent_count; ++iter) {
         buffer[i++] = scanner->indent_length_stack->data[iter];
     }
 
     iter = 1;
-    for (; iter < scanner->bullet_stack->len &&
-           i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
-         ++iter) {
+    for (; iter <= indent_count; ++iter) {
         buffer[i++] = scanner->bullet_stack->data[iter];
     }
 
     iter = 1;
-    for (; iter < scanner->section_stack->len &&
-           i < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
-         ++iter) {
+    for (; iter <= section_count; ++iter) {
         buffer[i++] = scanner->section_stack->data[iter];
+    }
+
+    iter = 0;
+    for (; iter < markup_count; ++iter) {
+        buffer[i++] = scanner->markup_stack->data[iter];
     }
 
     buffer[i++] = scanner->in_dollar_math;
@@ -120,22 +174,35 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     VEC_PUSH(scanner->indent_length_stack, -1);
     VEC_CLEAR(scanner->bullet_stack);
     VEC_PUSH(scanner->bullet_stack, NOTABULLET);
+    VEC_CLEAR(scanner->markup_stack);
     scanner->in_dollar_math = false;
 
     if (length == 0)
         return;
 
+    // The current serialization format always has at least four bytes:
+    // [indent_count][section_count][markup_count][in_dollar_math]
+    size_t minimum_serialized_size = 4;
+    if (length < minimum_serialized_size)
+        return;
+
     size_t i = 0;
 
     size_t indent_count = (uint8_t)buffer[i++];
+    size_t section_count = (uint8_t)buffer[i++];
+    size_t markup_count = (uint8_t)buffer[i++];
 
-    for (; i <= indent_count; i++)
+    for (size_t iter = 0; iter < indent_count && i < length; ++iter, ++i)
         VEC_PUSH(scanner->indent_length_stack, buffer[i]);
-    for (; i <= 2 * indent_count; i++)
+    for (size_t iter = 0; iter < indent_count && i < length; ++iter, ++i)
         VEC_PUSH(scanner->bullet_stack, buffer[i]);
-    for (; i < length - 1; i++)
+    for (size_t iter = 0; iter < section_count && i < length; ++iter, ++i)
         VEC_PUSH(scanner->section_stack, buffer[i]);
-    scanner->in_dollar_math = buffer[i];
+    for (size_t iter = 0; iter < markup_count && i < length; ++iter, ++i)
+        VEC_PUSH(scanner->markup_stack, buffer[i]);
+
+    if (i < length)
+        scanner->in_dollar_math = buffer[i];
 }
 
 static bool dedent(Scanner *scanner, TSLexer *lexer) {
@@ -197,10 +264,301 @@ static Bullet getbullet(TSLexer *lexer) {
     return NOTABULLET;
 }
 
+static Markup delimiter_to_markup(int32_t c) {
+    switch (c) {
+    case '*':
+        return MARKUP_BOLD;
+    case '/':
+        return MARKUP_ITALIC;
+    case '_':
+        return MARKUP_UNDERLINE;
+    case '+':
+        return MARKUP_STRIKETHROUGH;
+    case '=':
+        return MARKUP_VERBATIM;
+    case '~':
+        return MARKUP_CODE;
+    default:
+        return MARKUP_NONE;
+    }
+}
+
+static enum TokenType markup_open_token(Markup markup) {
+    switch (markup) {
+    case MARKUP_BOLD:
+        return BOLD_OPEN;
+    case MARKUP_ITALIC:
+        return ITALIC_OPEN;
+    case MARKUP_UNDERLINE:
+        return UNDERLINE_OPEN;
+    case MARKUP_STRIKETHROUGH:
+        return STRIKETHROUGH_OPEN;
+    case MARKUP_CODE:
+        return CODE_OPEN;
+    case MARKUP_VERBATIM:
+        return VERBATIM_OPEN;
+    default:
+        return ERROR_SENTINEL;
+    }
+}
+
+static enum TokenType markup_close_token(Markup markup) {
+    switch (markup) {
+    case MARKUP_BOLD:
+        return BOLD_CLOSE;
+    case MARKUP_ITALIC:
+        return ITALIC_CLOSE;
+    case MARKUP_UNDERLINE:
+        return UNDERLINE_CLOSE;
+    case MARKUP_STRIKETHROUGH:
+        return STRIKETHROUGH_CLOSE;
+    case MARKUP_CODE:
+        return CODE_CLOSE;
+    case MARKUP_VERBATIM:
+        return VERBATIM_CLOSE;
+    default:
+        return ERROR_SENTINEL;
+    }
+}
+
+// Emacs describes emphasis with the five fields of
+// org-emphasis-regexp-components. Their places in this scanner:
+//   pre:      valid_pre_char, computed in scan() before dispatch
+//   border:   is_markup_border_char, after the opener and before the
+//             closer
+//   body:     the lookahead walk in scan_markup_open
+//   post:     is_markup_post_char, plus delimiter chaining as a
+//             deviation from Emacs
+//   newlines: fixed at 0, the walk stops at the newline and scan()
+//             clears the markup stack at BOL
+static bool is_markup_border_char(int32_t c) {
+    return c != '\0' && !iswspace(c);
+}
+
+static bool is_markup_delimiter_char(int32_t c) {
+    return delimiter_to_markup(c) != MARKUP_NONE;
+}
+
+// Emacs post set (org-emphasis-regexp-components): - \t.,:!?;'")}\\[
+// or end of line. Space and tab are covered by iswspace. The rest is
+// ASCII, so the strchr lookup is guarded against values that would be
+// truncated when converted to char.
+static const char *const MARKUP_POST_PUNCTUATION = "-.,:!?;'\")}\\[";
+
+static bool is_markup_post_char(int32_t c) {
+    if (c == '\0' || iswspace(c))
+        return true;
+    if (c < 128 && strchr(MARKUP_POST_PUNCTUATION, c) != NULL)
+        return true;
+    // Delimiter chaining (*bold*/italic/) is not in the Emacs post set.
+    // Accepted here as a deliberate deviation.
+    return is_markup_delimiter_char(c);
+}
+
+static bool is_literal_markup(Markup markup) {
+    return markup == MARKUP_CODE || markup == MARKUP_VERBATIM;
+}
+
+static bool is_line_end(int32_t c) {
+    return c == '\0' || c == '\n' || c == '\r';
+}
+
+// A delimiter closes when the char before it is a border char and the
+// char after it is a post char.
+static bool is_markup_closer(int32_t before, int32_t after) {
+    return is_markup_border_char(before) && is_markup_post_char(after);
+}
+
+// Precondition: the delimiter has been consumed, lookahead is the char
+// after it.
+static bool scan_markup_close(Scanner *scanner, TSLexer *lexer,
+                              enum TokenType close_token) {
+    if (!is_markup_post_char(lexer->lookahead))
+        return false;
+    VEC_POP(scanner->markup_stack);
+    lexer->result_symbol = close_token;
+    return true;
+}
+
+static bool may_open_markup(Markup markup, Markup active_markup,
+                            bool valid_pre_char) {
+    if (active_markup == markup)
+        return false;
+    if (is_literal_markup(active_markup))
+        return false;
+    // Emacs allows whitespace, one of - ( ' " {, or BOL before an opening
+    // delimiter (org-element--parse-generic-emphasis). We only check
+    // whitespace/BOL: the scanner has no lookbehind into chars already
+    // consumed by the plain expr/str lexing, so a preceding '(' can't be
+    // told apart from an ordinary letter here.
+    return valid_pre_char;
+}
+
+// Precondition: the delimiter has been consumed, lookahead is the char
+// after it. Walks the rest of the line for a matching closer without
+// moving the token end, so the token stays the single delimiter char.
+static bool scan_markup_open(Scanner *scanner, TSLexer *lexer, Markup markup,
+                             int32_t delimiter, enum TokenType open_token) {
+    if (!is_markup_border_char(lexer->lookahead))
+        return false;
+    if (lexer->lookahead == delimiter)
+        return false;
+
+    int32_t last_char = '\0';
+    while (!is_line_end(lexer->lookahead)) {
+        if (lexer->lookahead == delimiter) {
+            advance(lexer);
+            if (is_markup_closer(last_char, lexer->lookahead)) {
+                VEC_PUSH(scanner->markup_stack, markup);
+                lexer->result_symbol = open_token;
+                return true;
+            }
+            last_char = delimiter;
+            continue;
+        }
+
+        last_char = lexer->lookahead;
+        advance(lexer);
+    }
+
+    return false;
+}
+
+// Precondition: the delimiter char has been consumed and marked as token
+// end, lookahead is the char after it. Decides whether it closes the
+// active markup, opens a new one, or is plain text.
+static bool scan_markup_open_or_close(Scanner *scanner, TSLexer *lexer,
+                                      const bool *valid_symbols, Markup markup,
+                                      int32_t delimiter, bool valid_pre_char) {
+    enum TokenType open_token = markup_open_token(markup);
+    enum TokenType close_token = markup_close_token(markup);
+    bool can_open = valid_symbols[open_token];
+    bool can_close = valid_symbols[close_token];
+
+    if (!can_open && !can_close)
+        return false;
+
+    Markup active_markup =
+        scanner->markup_stack->len > 0 ? VEC_BACK(scanner->markup_stack)
+                                       : MARKUP_NONE;
+
+    if (can_close && active_markup == markup)
+        return scan_markup_close(scanner, lexer, close_token);
+
+    if (!can_open || !may_open_markup(markup, active_markup, valid_pre_char))
+        return false;
+
+    return scan_markup_open(scanner, lexer, markup, delimiter, open_token);
+}
+
+static bool scan_markup_delimiter(Scanner *scanner, TSLexer *lexer,
+                                  const bool *valid_symbols,
+                                  bool valid_pre_char) {
+    int32_t delimiter = lexer->lookahead;
+    Markup markup = delimiter_to_markup(delimiter);
+    if (markup == MARKUP_NONE)
+        return false;
+
+    advance(lexer);
+    lexer->mark_end(lexer);
+    return scan_markup_open_or_close(scanner, lexer, valid_symbols, markup,
+                                     delimiter, valid_pre_char);
+}
+
+// Precondition: the first [ is consumed. Looks for the second [ and a
+// closing ]] with content in between, on the same line.
+static bool scan_link_open(TSLexer *lexer) {
+    if (lexer->lookahead != '[')
+        return false;
+    advance(lexer);
+    lexer->mark_end(lexer);
+    bool has_content = false;
+    while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
+        int32_t prev_lookahead = lexer->lookahead;
+        advance(lexer);
+        if (prev_lookahead == ']' && lexer->lookahead == ']') {
+            advance(lexer);
+            if (!has_content) {
+                return false;
+            }
+            lexer->result_symbol = LINKOPEN;
+            return true;
+        }
+        has_content = true;
+    }
+    return false;
+}
+
+// Precondition: the [ is consumed. Looks for fn: and a non-empty label
+// closed by ]. A definition is preferred over a reference at column zero.
+static bool scan_footnote_open(TSLexer *lexer, const bool *valid_symbols,
+                               bool at_col0) {
+    if (towlower(lexer->lookahead) != 'f')
+        return false;
+    advance(lexer);
+    if (towlower(lexer->lookahead) != 'n')
+        return false;
+    advance(lexer);
+    if (lexer->lookahead != ':')
+        return false;
+    advance(lexer);
+    lexer->mark_end(lexer);
+
+    bool has_label = false;
+    while (lexer->lookahead != '\0' && !iswspace(lexer->lookahead) &&
+           lexer->lookahead != ']') {
+        has_label = true;
+        advance(lexer);
+    }
+
+    if (!has_label || lexer->lookahead != ']')
+        return false;
+
+    if (valid_symbols[FNDEFOPEN] && at_col0) {
+        lexer->result_symbol = FNDEFOPEN;
+    } else if (valid_symbols[FOOTNOTEOPEN]) {
+        lexer->result_symbol = FOOTNOTEOPEN;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// Consumes the [ and dispatches on the next character: a second [ starts
+// a link, f starts a footnote, anything else is plain text.
+static bool scan_bracket_open(TSLexer *lexer, const bool *valid_symbols,
+                              bool at_col0) {
+    if (lexer->lookahead != '[')
+        return false;
+    if (!valid_symbols[LINKOPEN] && !valid_symbols[FOOTNOTEOPEN] &&
+        !valid_symbols[FNDEFOPEN])
+        return false;
+
+    advance(lexer);
+    if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
+        return scan_link_open(lexer);
+    }
+    if ((valid_symbols[FOOTNOTEOPEN] || valid_symbols[FNDEFOPEN]) &&
+        towlower(lexer->lookahead) == 'f') {
+        return scan_footnote_open(lexer, valid_symbols, at_col0);
+    }
+    return false;
+}
+
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     // Error recovery
     if (valid_symbols[ERROR_SENTINEL]) {
         return false;
+    }
+
+    // Org inline markup does not span lines, so stale unmatched delimiters from
+    // a previous line must not suppress valid markup on later lines. An entry
+    // goes stale when its closer is swallowed by a link or math token: the
+    // close is then never requested and the entry would stay on the stack
+    // forever.
+    bool at_bol = lexer->get_column(lexer) == 0;
+    if (at_bol) {
+        VEC_CLEAR(scanner->markup_stack);
     }
 
     // - Section ends
@@ -264,13 +622,13 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
 
     // - Col=0 star
-    if (indent_length == 0 && lexer->lookahead == '*') {
+    if (at_bol && indent_length == 0 && lexer->lookahead == '*') {
         lexer->mark_end(lexer);
         int16_t stars = 1;
-        skip(lexer);
+        advance(lexer);
         while (lexer->lookahead == '*') {
             stars++;
-            skip(lexer);
+            advance(lexer);
         }
 
         if (lexer->lookahead == '\n') {
@@ -287,6 +645,16 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             lexer->result_symbol = HLSTARS;
             return true;
         }
+
+        if (stars == 1) {
+            lexer->mark_end(lexer);
+            if (scan_markup_open_or_close(scanner, lexer, valid_symbols,
+                                          MARKUP_BOLD, '*',
+                                          /* valid_pre_char: */ true)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -309,26 +677,16 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         }
     }
 
-    if (valid_symbols[LINKOPEN] && lexer->lookahead == '[') {
-        advance(lexer);
-        if (lexer->lookahead == '[') {
-            advance(lexer);
-            lexer->mark_end(lexer);
-            bool has_content = false;
-            while (lexer->lookahead != '\n' && lexer->lookahead != '\0') {
-                int32_t prev_lookahead = lexer->lookahead;
-                advance(lexer);
-                if (prev_lookahead == ']' && lexer->lookahead == ']') {
-                    advance(lexer);
-                    if (!has_content) {
-                        return false;
-                    }
-                    lexer->result_symbol = LINKOPEN;
-                    return true;
-                }
-                has_content = true;
-            }
-        }
+    // Emacs border-pre: opening delimiter must be preceded by whitespace or
+    // be at the start of the line (see may_open_markup).
+    if (scan_markup_delimiter(scanner, lexer, valid_symbols,
+                              indent_length > 0 || at_bol)) {
+        return true;
+    }
+
+    if (scan_bracket_open(lexer, valid_symbols,
+                          /* at_col0: */ at_bol && indent_length == 0)) {
+        return true;
     }
 
     // $ LaTeX math delimiters
@@ -387,6 +745,7 @@ void *tree_sitter_org_external_scanner_create() {
     scanner->indent_length_stack = (stack *)calloc(1, sizeof(stack));
     scanner->bullet_stack = (stack *)calloc(1, sizeof(stack));
     scanner->section_stack = (stack *)calloc(1, sizeof(stack));
+    scanner->markup_stack = (stack *)calloc(1, sizeof(stack));
     deserialize(scanner, NULL, 0);
     return scanner;
 }
@@ -415,8 +774,10 @@ void tree_sitter_org_external_scanner_destroy(void *payload) {
     VEC_FREE(scanner->indent_length_stack);
     VEC_FREE(scanner->bullet_stack);
     VEC_FREE(scanner->section_stack);
+    VEC_FREE(scanner->markup_stack);
     free(scanner->indent_length_stack);
     free(scanner->bullet_stack);
     free(scanner->section_stack);
+    free(scanner->markup_stack);
     free(scanner);
 }

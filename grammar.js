@@ -1,6 +1,7 @@
 const asciiSymbols = [ '!', '"', '#', '$', '%', '&', "'", '(', ')', '*',
   '+', ',', '-', '.', '/',  ':', ';', '<', '=', '>', '?', '@', '[', ']',
   '\\', '^', '_', '`', '{', '|', '}', '~' ]
+const markupDelimiters = '*/_+=~'
 
 const org_grammar = {
   name: 'org',
@@ -16,8 +17,22 @@ const org_grammar = {
     $._sectionend,
     $._eof,  // Basically just '\0', but allows multiple to be matched
     $._link_open,
+    $._footnote_open,
+    $._fndef_open,
     $.latex_math_single_dollar,
     $.text_dollar,
+    $._bold_open,
+    $._bold_close,
+    $._italic_open,
+    $._italic_close,
+    $._underline_open,
+    $._underline_close,
+    $._strikethrough_open,
+    $._strikethrough_close,
+    $._code_open,
+    $._code_close,
+    $._verbatim_open,
+    $._verbatim_close,
     $.error_sentinel
   ],
 
@@ -118,6 +133,36 @@ const org_grammar = {
         field('contents', alias(repeat($.expr), $.contents)),
         field('close', alias($.latex_math_single_dollar, $.close))
       ),
+    ),
+
+    inline_latex: $ => prec.right(seq(
+      field('command', alias(token(/\\\p{L}+\*?/u), $.command)),
+      repeat(choice(
+        field('option', $.latex_optional_argument),
+        field('argument', $.latex_argument),
+      )),
+    )),
+
+    latex_argument: $ => seq(
+      field('open', alias(token.immediate('{'), $.open)),
+      field('contents', alias(repeat(choice(
+        $.expr,
+        $.inline_latex,
+        $.latex_argument,
+        $.latex_optional_argument,
+      )), $.contents)),
+      field('close', alias(choice(token('}'), token.immediate('}')), $.close)),
+    ),
+
+    latex_optional_argument: $ => seq(
+      field('open', alias(token.immediate('['), $.open)),
+      field('contents', alias(repeat(choice(
+        $.expr,
+        $.inline_latex,
+        $.latex_argument,
+        $.latex_optional_argument,
+      )), $.contents)),
+      field('close', alias(choice(token(']'), token.immediate(']')), $.close)),
     ),
 
     display_math_block: $ => choice(
@@ -244,11 +289,17 @@ const org_grammar = {
     fndef: $ => prec.dynamic(1, seq(
       optional($._directive_list),
       seq(
-        alias(/\[fn:/i, '[fn:'),
-        field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
-        ']',
+        alias($._fndef_open, '[fn:'),
+        field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
+        token.immediate(']'),
       ),
       field('description', alias($._fndef_description, $.description))
+    )),
+
+    fnref: $ => prec(-1, seq(
+      alias($._footnote_open, '[fn:'),
+      field('label', alias(token.immediate(/[^\p{Z}\t\n\r\]]+/), $.expr)),
+      token.immediate(']'),
     )),
 
     _directive_list: $ => repeat1(field('directive', $.directive)),
@@ -399,8 +450,15 @@ const org_grammar = {
       repeat(seq(
         choice(
           $._fndef_initial_expr,
+          $.bold,
+          $.italic,
+          $.underline,
+          $.strikethrough,
+          $.code,
+          $.verbatim,
           $.inline_code_block,
           $.inline_math_block,
+          $.inline_latex,
           $.display_math_block,
           $.link,
           $.link_desc,
@@ -422,22 +480,59 @@ const org_grammar = {
     ),
 
     _markup: $ => choice(
-      $.expr,
+      $.bold,
+      $.italic,
+      $.underline,
+      $.strikethrough,
+      $.code,
+      $.verbatim,
       $.inline_code_block,
       $.inline_math_block,
+      $.inline_latex,
       $.display_math_block,
       $.link,
       $.link_desc,
-      $.fnref,
       $.timestamp,
+      $.fnref,
       $.citation,
+      $.expr,
     ),
 
-    fnref: $ => prec(-1, seq(
-      alias(/\[fn:/i, '[fn:'),
-      field('label', alias(/[^\p{Z}\t\n\r\]]+/, $.expr)),
-      ']',
+    bold: $ => prec.right(seq(
+      field('open', alias($._bold_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._bold_close, $.close))
     )),
+
+    italic: $ => prec.right(seq(
+      field('open', alias($._italic_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._italic_close, $.close))
+    )),
+
+    underline: $ => prec.right(seq(
+      field('open', alias($._underline_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._underline_close, $.close))
+    )),
+
+    strikethrough: $ => prec.right(seq(
+      field('open', alias($._strikethrough_open, $.open)),
+      field('contents', alias(repeat1(nestedMarkup($)), $.contents)),
+      field('close', alias($._strikethrough_close, $.close))
+    )),
+
+    code: $ => seq(
+      field('open', alias($._code_open, $.open)),
+      field('contents', alias(repeat1($.expr), $.contents)),
+      field('close', alias($._code_close, $.close))
+    ),
+
+    verbatim: $ => seq(
+      field('open', alias($._verbatim_open, $.open)),
+      field('contents', alias(repeat1($.expr), $.contents)),
+      field('close', alias($._verbatim_close, $.close))
+    ),
 
     citation: $ => choice(
       seq(
@@ -479,9 +574,14 @@ const org_grammar = {
       repeat(expr('immediate', token.immediate, '>]'))
     ),
 
-    expr: $ => seq(
-      expr('non-immediate', token),
-      repeat(expr('immediate', token.immediate))
+    expr: $ => choice(
+      // Catches a lone markup delimiter the scanner rejected as open or
+      // close, so it ends up as plain text instead of a parse error.
+      token(prec(-1, /[*\/_+=~]/)),
+      seq(
+        expr('non-immediate', token, markupDelimiters),
+        repeat(expr('immediate', token.immediate, markupDelimiters))
+      )
     ),
 
     _expr_with_space: $ => seq(
@@ -495,15 +595,48 @@ const org_grammar = {
 function expr(pr, tfunc, skip = '', extra = '') {
   skip = skip.split("")
   extra = extra.split("")
+  // Markup delimiters passed as skip stay out of the internal lexer. The
+  // external scanner decides whether a delimiter opens, closes or is text;
+  // once the lexer has consumed it as a sym token the scanner is never asked.
+  const excluded = skip.length === 0 ? '' : escapeForRegexCharClass(skip.join(''))
   return choice(
     ...asciiSymbols.filter(c => !skip.includes(c)).map(c => tfunc(prec(pr, c))),
     ...extra.map(c => tfunc(prec(pr, c))),
     alias(tfunc(prec(pr, /\p{L}+/)), 'str'),
     alias(tfunc(prec(pr, /\p{N}+/)), 'num'),
-    alias(tfunc(prec(pr, /[^\p{Z}\p{L}\p{N}\t\n\r]/)), 'sym'),
+    alias(tfunc(prec(pr, new RegExp(`[^\\p{Z}\\p{L}\\p{N}\\t\\n\\r${excluded}]`, 'u'))), 'sym'),
      // for checkboxes: ugly, but makes them work..
     // alias(tfunc(prec(pr, 'x')), 'str'),
     // alias(tfunc(prec(pr, 'X')), 'str'),
+  )
+}
+
+function escapeForRegexCharClass(text) {
+  return text.replace(/[\\\-\[\]\^]/g, '\\$&')
+}
+
+function nestedExpr() {
+  return alias(token(/[^\s*\/_+=~]+/), 'expr')
+}
+
+function nestedMarkup($) {
+  return choice(
+    $.bold,
+    $.italic,
+    $.underline,
+    $.strikethrough,
+    $.code,
+    $.verbatim,
+    nestedExpr(),
+    $.inline_code_block,
+    $.inline_math_block,
+    $.inline_latex,
+    $.display_math_block,
+    $.link,
+    $.link_desc,
+    $.timestamp,
+    $.fnref,
+    $.citation,
   )
 }
 
